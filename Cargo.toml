@@ -1,0 +1,15 @@
+[package]
+name = "notion-echo"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+napi = "2"
+napi-derive = "2"
+tokio = "1.36.0"
+
+[build-dependencies]
+napi-build = "1"
