@@ -20,4 +20,16 @@ static napi_value Init(napi_env env, napi_value exports) {
   return exports;
 }
 
+napi_value AccessSharedBuffer(napi_env env, napi_callback_info info) {
+    size_t argc = 1;
+    napi_value args[1];
+    napi_get_cb_info(env, info, &argc, args, nullptr, nullptr);
+
+    void* bufferData;
+    size_t byteLength;
+    napi_get_arraybuffer_info(env, args[0], &bufferData, &byteLength);
+
+    return nullptr;
+}
+
 NAPI_MODULE(NODE_GYP_MODULE_NAME, Init)
