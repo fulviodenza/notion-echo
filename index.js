@@ -1,8 +1,9 @@
-const sharedBuffer = require("./index.node");
+const bot = require("./index.node");
 
 async function run() {
-    const shmid = await sharedBuffer.createSharedMemory();
+    const shmid = await bot.createSharedMemory();
     console.log(`Shared memory segment ID: ${shmid}`);
 }
 
 run()
+bot.start()

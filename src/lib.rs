@@ -4,12 +4,13 @@ use shared_memory::*;
 use teloxide::prelude::*;
 
 #[napi]
-async fn dice() {
+async fn start() {
     println!("Starting notion-echo bot...");
 
     let bot = Bot::from_env();
 
     teloxide::repl(bot, |bot: Bot, msg: Message| async move {
+        // TODO: handle messages
         bot.send_message(msg.chat.id, "Note saved to Notion")
             .await?;
         Ok(())
