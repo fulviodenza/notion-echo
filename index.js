@@ -1,7 +1,8 @@
-const { dice } = require("./index.node");
-var addon = require('bindings')('hello');
+const sharedBuffer = require("./index.node");
 
-const sharedBuffer = new SharedArrayBuffer(1024);
+async function run() {
+    const shmid = await sharedBuffer.createSharedMemory();
+    console.log(`Shared memory segment ID: ${shmid}`);
+}
 
-console.log(addon.hello())
-console.log(dice())
+run()

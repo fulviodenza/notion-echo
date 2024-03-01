@@ -4,7 +4,8 @@
   "description": "A telegram bot to write your thoughts in Notion from Telegram",
   "main": "index.js",
   "scripts": {
-    "build": "napi build"
+    "build": "napi build",
+    "dev": "node index.js"
   },
   "keywords": [],
   "author": "",

@@ -11,6 +11,8 @@ napi = { version = "2", features = ["tokio_rt", "async"] }
 napi-derive = "2"
 tokio = { version = "1.36.0", features = ["rt"] }
 teloxide = "0.12.2"
+shared_memory = "0.12.4"
+neon = "1.0.0"
 
 [build-dependencies]
 napi-build = "1"
