@@ -15,6 +15,7 @@ import (
 	cfg "github.com/SakoDroid/telego/v2/configs"
 	objs "github.com/SakoDroid/telego/v2/objects"
 	"github.com/jomei/notionapi"
+	notion "github.com/notion-echo/adapters/notion"
 )
 
 const (
@@ -32,6 +33,7 @@ const (
 
 const (
 	COMMAND_NOTE = "/note"
+	COMMAND_HELP = "/help"
 )
 
 const (
@@ -42,7 +44,7 @@ const (
 
 type Bot struct {
 	TelegramClient bt.Bot
-	NotionClient   notionapi.Client
+	NotionClient   notion.Interface
 
 	helpMessage string
 }
@@ -68,11 +70,7 @@ func NewBotWithConfig() (*Bot, error) {
 		LogFileAddress: cfg.DefaultLogFile,
 	}
 
-	notionClient := notionapi.NewClient(notionapi.Token(notionToken))
-
-	bot := &Bot{
-		NotionClient: *notionClient,
-	}
+	bot := &Bot{}
 
 	bot.loadHelpMessage()
 
@@ -82,6 +80,8 @@ func NewBotWithConfig() (*Bot, error) {
 	}
 	bot.SetTelegramClient(*b)
 
+	notionClient := notion.NewNotionService(notionapi.NewClient(notionapi.Token(notionToken)))
+	bot.SetNotionClient(notionClient)
 	return bot, err
 }
 
@@ -108,6 +108,14 @@ func (b *Bot) Start(ctx context.Context) {
 
 func (b *Bot) GetHelpMessage() string {
 	return b.helpMessage
+}
+
+func (b *Bot) SetNotionClient(client notion.Interface) {
+	b.NotionClient = client
+}
+
+func (b *Bot) GetNotionClient() notion.Interface {
+	return b.NotionClient
 }
 
 func (b *Bot) SendMessage(msg string, up *objs.Update, formatMarkdown bool) error {
@@ -154,5 +162,6 @@ func (b *Bot) GetTelegramClient() *bt.Bot {
 func (b *Bot) initializeHandlers() map[string]func(ctx context.Context, up *objs.Update) {
 	return map[string]func(ctx context.Context, up *objs.Update){
 		COMMAND_NOTE: NewNoteCommand(b),
+		COMMAND_HELP: NewHelpCommand(b),
 	}
 }

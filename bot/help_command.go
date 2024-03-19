@@ -24,7 +24,7 @@ func NewHelpCommand(bot *Bot) types.Command {
 func (hc *HelpCommand) Execute(ctx context.Context, update *objects.Update) {
 	helpMessage := hc.Bot.GetHelpMessage()
 
-	err := hc.Bot.SendMessage(helpMessage, update, false)
+	err := hc.Bot.SendMessage(helpMessage, update, true)
 	if err != nil {
 		log.Printf("Failed to send help message: %v", err)
 	}
