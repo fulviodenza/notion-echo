@@ -1,6 +1,2 @@
-node_modules
-build
-.vscode
-package-lock.json
-target
-index.node
+.env
+vendor
