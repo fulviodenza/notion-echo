@@ -6,16 +6,13 @@ import (
 	bt "github.com/SakoDroid/telego/v2"
 	objs "github.com/SakoDroid/telego/v2/objects"
 	"github.com/jomei/notionapi"
+	"github.com/notion-echo/adapters/notion"
 )
 
 type NotionDbRow struct {
 	Tags notionapi.MultiSelectProperty `json:"Tags"`
 	Text notionapi.RichTextProperty    `json:"Text"`
 	Name notionapi.TitleProperty       `json:"Name"`
-}
-
-type NotionInterface interface {
-	DatabaseQuery(ctx context.Context, databaseID notionapi.DatabaseID, query *notionapi.DatabaseQueryRequest) (*notionapi.DatabaseQueryResponse, error)
 }
 
 type TelegramInterface interface {
@@ -35,4 +32,6 @@ type IBot interface {
 	GetHelpMessage() string
 	SetTelegramClient(bot bt.Bot)
 	GetTelegramClient() *bt.Bot
+	SetNotionClient(client notion.Interface)
+	GetNotionClient() notion.Interface
 }
