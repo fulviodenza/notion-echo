@@ -15,6 +15,7 @@ import (
 	cfg "github.com/SakoDroid/telego/v2/configs"
 	objs "github.com/SakoDroid/telego/v2/objects"
 	"github.com/jomei/notionapi"
+	"github.com/notion-echo/adapters/db"
 	notion "github.com/notion-echo/adapters/notion"
 )
 
@@ -45,8 +46,8 @@ const (
 type Bot struct {
 	TelegramClient bt.Bot
 	NotionClient   notion.Interface
-
-	helpMessage string
+	UserRepo       db.UserRepoInterface
+	helpMessage    string
 }
 
 // this cast force us to follow the given interface
@@ -82,6 +83,13 @@ func NewBotWithConfig() (*Bot, error) {
 
 	notionClient := notion.NewNotionService(notionapi.NewClient(notionapi.Token(notionToken)))
 	bot.SetNotionClient(notionClient)
+
+	userRepo, err := db.SetupAndConnectDatabase(databaseUrl)
+	if err != nil {
+		return nil, err
+	}
+	bot.SetUserRepo(userRepo)
+
 	return bot, err
 }
 
@@ -159,6 +167,12 @@ func (b *Bot) GetTelegramClient() *bt.Bot {
 	return &b.TelegramClient
 }
 
+func (b *Bot) SetUserRepo(db db.UserRepoInterface) {
+	b.UserRepo = db
+}
+func (b *Bot) GetUserRepo() db.UserRepoInterface {
+	return b.UserRepo
+}
 func (b *Bot) initializeHandlers() map[string]func(ctx context.Context, up *objs.Update) {
 	return map[string]func(ctx context.Context, up *objs.Update){
 		COMMAND_NOTE: NewNoteCommand(b),

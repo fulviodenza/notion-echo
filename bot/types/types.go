@@ -6,6 +6,7 @@ import (
 	bt "github.com/SakoDroid/telego/v2"
 	objs "github.com/SakoDroid/telego/v2/objects"
 	"github.com/jomei/notionapi"
+	"github.com/notion-echo/adapters/db"
 	"github.com/notion-echo/adapters/notion"
 )
 
@@ -34,4 +35,6 @@ type IBot interface {
 	GetTelegramClient() *bt.Bot
 	SetNotionClient(client notion.Interface)
 	GetNotionClient() notion.Interface
+	SetUserRepo(db db.UserRepoInterface)
+	GetUserRepo() db.UserRepoInterface
 }

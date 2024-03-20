@@ -5,6 +5,7 @@ import (
 
 	bt "github.com/SakoDroid/telego/v2"
 	"github.com/SakoDroid/telego/v2/objects"
+	"github.com/notion-echo/adapters/db"
 	"github.com/notion-echo/adapters/notion"
 	"github.com/notion-echo/bot/types"
 )
@@ -37,6 +38,13 @@ func (b *MockBot) GetHelpMessage() string {
 func (b *MockBot) SetTelegramClient(bot bt.Bot) {}
 
 func (b *MockBot) GetTelegramClient() *bt.Bot {
+	return nil
+}
+
+func (b *MockBot) SetUserRepo(db db.UserRepoInterface) {
+
+}
+func (b *MockBot) GetUserRepo() db.UserRepoInterface {
 	return nil
 }
 
