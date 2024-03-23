@@ -133,7 +133,7 @@ func (b *Bot) RunOauth2Endpoint() {
 		c.JSON(200, client)
 		return err
 	})
-	e.Logger.Fatal(e.StartTLS(":8080", "certs/cert.pem", "certs/key.pem"))
+	e.Logger.Fatal(e.StartAutoTLS(":8080"))
 }
 
 func (b *Bot) GetHelpMessage() string {
