@@ -123,13 +123,20 @@ func (b *Bot) RunOauth2Endpoint() {
 	e.Use(middleware.Recover())
 
 	e.GET("/oauth2", func(c echo.Context) error {
-		client, notionToken, token, err := oauth.Handler(c)
+		log.Println("got request with context: %w ", c)
+		notionToken, token, err := oauth.Handler(c)
+		if err != nil {
+			log.Println("got error: %w", err)
+		}
+
 		state := c.QueryParam("state")
-		fmt.Printf("state token: %s\n", state)
-		b.UserRepo.SaveNotionTokenByStateToken(context.Background(), notionToken, state)
+		_, err = b.UserRepo.SaveNotionTokenByStateToken(context.Background(), notionToken, state)
+		if err != nil {
+			log.Println("got error: %w", err)
+		}
+
 		b.SetNotionClient(token, notionToken)
 		fmt.Println(b.NotionClient)
-		c.JSON(200, client)
 		return err
 	})
 	e.Logger.Fatal(e.StartAutoTLS(":8080"))

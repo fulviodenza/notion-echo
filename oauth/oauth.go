@@ -10,9 +10,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/jomei/notionapi"
 	"github.com/labstack/echo"
-	"github.com/notion-echo/adapters/notion"
 )
 
 type OAuthAccessToken struct {
@@ -28,7 +26,7 @@ var (
 	REDIRECT_URL        = "REDIRECT_URL"
 )
 
-func Handler(c echo.Context) (notion.Interface, string, string, error) {
+func Handler(c echo.Context) (string, string, error) {
 	oauthClientSecret := os.Getenv(OAUTH_CLIENT_SECRET)
 	oauthClientId := os.Getenv(OAUTH_CLIENT_ID)
 	redirectUrl := os.Getenv(REDIRECT_URL)
@@ -55,21 +53,22 @@ func Handler(c echo.Context) (notion.Interface, string, string, error) {
 	})
 	if err != nil {
 		log.Fatal(err)
-		return nil, "", "", err
+		return "", "", err
 	}
 	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, "https://api.notion.com/v1/oauth/token", bytes.NewReader(b))
 	if err != nil {
 		log.Fatal(err)
-		return nil, "", "", err
+		return "", "", err
 	}
 	req.SetBasicAuth(oauthClientId, oauthClientSecret)
 	req.Header.Add("Content-Type", "application/json")
 
 	log.Println("got request:", req)
+
 	rsp, err := client.Do(req)
 	if err != nil {
 		log.Fatal(err)
-		return nil, "", "", err
+		return "", "", err
 	}
 
 	defer rsp.Body.Close()
@@ -77,10 +76,8 @@ func Handler(c echo.Context) (notion.Interface, string, string, error) {
 	var body OAuthAccessToken
 	if err = json.NewDecoder(rsp.Body).Decode(&body); err != nil {
 		fmt.Println(err)
-		return nil, "", "", err
+		return "", "", err
 	}
-	token := body.AccessToken
-	notionClient := notion.NewNotionService(notionapi.NewClient(notionapi.Token(token)))
 
-	return notionClient, token, stateToken, nil
+	return body.AccessToken, stateToken, nil
 }
