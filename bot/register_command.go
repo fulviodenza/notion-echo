@@ -25,6 +25,10 @@ func NewRegisterCommand(bot *Bot) types.Command {
 }
 
 func (rc *RegisterCommand) Execute(ctx context.Context, update *objects.Update) {
+	if rc == nil || rc.Bot == nil {
+		return
+	}
+
 	redirectURL := os.Getenv(REDIRECT_URL)
 	oauthClientID := os.Getenv(OAUTH_CLIENT_ID)
 

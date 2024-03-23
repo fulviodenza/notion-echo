@@ -71,6 +71,16 @@ var (
 )
 
 func NewBotWithConfig() (*Bot, error) {
+	bot := &Bot{}
+
+	userRepo, err := db.SetupAndConnectDatabase(databaseUrl)
+	if err != nil {
+		return nil, err
+	}
+	bot.SetUserRepo(userRepo)
+
+	bot.loadHelpMessage()
+
 	bot_config := &cfg.BotConfigs{
 		BotAPI:         cfg.DefaultBotAPI,
 		APIKey:         telegramToken,
@@ -78,22 +88,11 @@ func NewBotWithConfig() (*Bot, error) {
 		Webhook:        false,
 		LogFileAddress: cfg.DefaultLogFile,
 	}
-
-	bot := &Bot{}
-
-	bot.loadHelpMessage()
-
 	b, err := bt.NewBot(bot_config)
 	if err != nil {
 		return nil, err
 	}
 	bot.SetTelegramClient(*b)
-
-	userRepo, err := db.SetupAndConnectDatabase(databaseUrl)
-	if err != nil {
-		return nil, err
-	}
-	bot.SetUserRepo(userRepo)
 
 	return bot, err
 }

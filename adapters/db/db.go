@@ -3,7 +3,9 @@ package db
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
+	"time"
 
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
@@ -12,10 +14,25 @@ import (
 )
 
 func SetupAndConnectDatabase(baseConnectionString string) (UserRepoInterface, error) {
-	db, err := sql.Open("pgx", baseConnectionString)
+	var db *sql.DB
+	var err error
+
+	maxRetries := 5
+	for i := 0; i < maxRetries; i++ {
+		db, err = sql.Open("pgx", baseConnectionString)
+		if err == nil {
+			err = db.Ping()
+			if err == nil {
+				break
+			}
+		}
+
+		log.Printf("\n[SetupAndConnectDatabase]: Database unavailable, retrying...")
+		time.Sleep(2 * time.Second)
+	}
+
 	if err != nil {
-		log.Fatalf("[SetupAndConnectDatabase]: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to connect to database after %d attempts: %w", maxRetries, err)
 	}
 
 	drv := entsql.OpenDB(dialect.Postgres, db)
@@ -28,5 +45,5 @@ func SetupAndConnectDatabase(baseConnectionString string) (UserRepoInterface, er
 	log.Printf("\n[SetupAndConnectDatabase]: Database connection established")
 	return &UserRepo{
 		client,
-	}, err
+	}, nil
 }
