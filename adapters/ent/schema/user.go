@@ -14,6 +14,8 @@ type User struct {
 func (User) Fields() []ent.Field {
 	return []ent.Field{
 		field.Int("id"),
+		field.String("state_token").
+			Default(""),
 		field.String("notion_token").
 			Default(""),
 	}

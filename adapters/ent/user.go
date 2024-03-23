@@ -16,6 +16,8 @@ type User struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
+	// StateToken holds the value of the "state_token" field.
+	StateToken string `json:"state_token,omitempty"`
 	// NotionToken holds the value of the "notion_token" field.
 	NotionToken  string `json:"notion_token,omitempty"`
 	selectValues sql.SelectValues
@@ -28,7 +30,7 @@ func (*User) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case user.FieldID:
 			values[i] = new(sql.NullInt64)
-		case user.FieldNotionToken:
+		case user.FieldStateToken, user.FieldNotionToken:
 			values[i] = new(sql.NullString)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -51,6 +53,12 @@ func (u *User) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
 			u.ID = int(value.Int64)
+		case user.FieldStateToken:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field state_token", values[i])
+			} else if value.Valid {
+				u.StateToken = value.String
+			}
 		case user.FieldNotionToken:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field notion_token", values[i])
@@ -93,6 +101,9 @@ func (u *User) String() string {
 	var builder strings.Builder
 	builder.WriteString("User(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", u.ID))
+	builder.WriteString("state_token=")
+	builder.WriteString(u.StateToken)
+	builder.WriteString(", ")
 	builder.WriteString("notion_token=")
 	builder.WriteString(u.NotionToken)
 	builder.WriteByte(')')

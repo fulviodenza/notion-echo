@@ -11,6 +11,8 @@ const (
 	Label = "user"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
+	// FieldStateToken holds the string denoting the state_token field in the database.
+	FieldStateToken = "state_token"
 	// FieldNotionToken holds the string denoting the notion_token field in the database.
 	FieldNotionToken = "notion_token"
 	// Table holds the table name of the user in the database.
@@ -20,6 +22,7 @@ const (
 // Columns holds all SQL columns for user fields.
 var Columns = []string{
 	FieldID,
+	FieldStateToken,
 	FieldNotionToken,
 }
 
@@ -34,6 +37,8 @@ func ValidColumn(column string) bool {
 }
 
 var (
+	// DefaultStateToken holds the default value on creation for the "state_token" field.
+	DefaultStateToken string
 	// DefaultNotionToken holds the default value on creation for the "notion_token" field.
 	DefaultNotionToken string
 )
@@ -44,6 +49,11 @@ type OrderOption func(*sql.Selector)
 // ByID orders the results by the id field.
 func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByStateToken orders the results by the state_token field.
+func ByStateToken(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldStateToken, opts...).ToFunc()
 }
 
 // ByNotionToken orders the results by the notion_token field.

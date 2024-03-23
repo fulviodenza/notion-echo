@@ -19,6 +19,20 @@ type UserCreate struct {
 	hooks    []Hook
 }
 
+// SetStateToken sets the "state_token" field.
+func (uc *UserCreate) SetStateToken(s string) *UserCreate {
+	uc.mutation.SetStateToken(s)
+	return uc
+}
+
+// SetNillableStateToken sets the "state_token" field if the given value is not nil.
+func (uc *UserCreate) SetNillableStateToken(s *string) *UserCreate {
+	if s != nil {
+		uc.SetStateToken(*s)
+	}
+	return uc
+}
+
 // SetNotionToken sets the "notion_token" field.
 func (uc *UserCreate) SetNotionToken(s string) *UserCreate {
 	uc.mutation.SetNotionToken(s)
@@ -74,6 +88,10 @@ func (uc *UserCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (uc *UserCreate) defaults() {
+	if _, ok := uc.mutation.StateToken(); !ok {
+		v := user.DefaultStateToken
+		uc.mutation.SetStateToken(v)
+	}
 	if _, ok := uc.mutation.NotionToken(); !ok {
 		v := user.DefaultNotionToken
 		uc.mutation.SetNotionToken(v)
@@ -82,6 +100,9 @@ func (uc *UserCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (uc *UserCreate) check() error {
+	if _, ok := uc.mutation.StateToken(); !ok {
+		return &ValidationError{Name: "state_token", err: errors.New(`ent: missing required field "User.state_token"`)}
+	}
 	if _, ok := uc.mutation.NotionToken(); !ok {
 		return &ValidationError{Name: "notion_token", err: errors.New(`ent: missing required field "User.notion_token"`)}
 	}
@@ -116,6 +137,10 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	if id, ok := uc.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = id
+	}
+	if value, ok := uc.mutation.StateToken(); ok {
+		_spec.SetField(user.FieldStateToken, field.TypeString, value)
+		_node.StateToken = value
 	}
 	if value, ok := uc.mutation.NotionToken(); ok {
 		_spec.SetField(user.FieldNotionToken, field.TypeString, value)

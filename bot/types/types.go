@@ -7,7 +7,6 @@ import (
 	objs "github.com/SakoDroid/telego/v2/objects"
 	"github.com/jomei/notionapi"
 	"github.com/notion-echo/adapters/db"
-	"github.com/notion-echo/adapters/notion"
 )
 
 type NotionDbRow struct {
@@ -33,8 +32,9 @@ type IBot interface {
 	GetHelpMessage() string
 	SetTelegramClient(bot bt.Bot)
 	GetTelegramClient() *bt.Bot
-	SetNotionClient(client notion.Interface)
-	GetNotionClient() notion.Interface
+	SetNotionUser(token string)
+	SetNotionClient(token string, notionToken string)
+	GetNotionClient(userId string) string
 	SetUserRepo(db db.UserRepoInterface)
 	GetUserRepo() db.UserRepoInterface
 }

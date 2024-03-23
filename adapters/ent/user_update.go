@@ -27,6 +27,20 @@ func (uu *UserUpdate) Where(ps ...predicate.User) *UserUpdate {
 	return uu
 }
 
+// SetStateToken sets the "state_token" field.
+func (uu *UserUpdate) SetStateToken(s string) *UserUpdate {
+	uu.mutation.SetStateToken(s)
+	return uu
+}
+
+// SetNillableStateToken sets the "state_token" field if the given value is not nil.
+func (uu *UserUpdate) SetNillableStateToken(s *string) *UserUpdate {
+	if s != nil {
+		uu.SetStateToken(*s)
+	}
+	return uu
+}
+
 // SetNotionToken sets the "notion_token" field.
 func (uu *UserUpdate) SetNotionToken(s string) *UserUpdate {
 	uu.mutation.SetNotionToken(s)
@@ -82,6 +96,9 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
+	if value, ok := uu.mutation.StateToken(); ok {
+		_spec.SetField(user.FieldStateToken, field.TypeString, value)
+	}
 	if value, ok := uu.mutation.NotionToken(); ok {
 		_spec.SetField(user.FieldNotionToken, field.TypeString, value)
 	}
@@ -103,6 +120,20 @@ type UserUpdateOne struct {
 	fields   []string
 	hooks    []Hook
 	mutation *UserMutation
+}
+
+// SetStateToken sets the "state_token" field.
+func (uuo *UserUpdateOne) SetStateToken(s string) *UserUpdateOne {
+	uuo.mutation.SetStateToken(s)
+	return uuo
+}
+
+// SetNillableStateToken sets the "state_token" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillableStateToken(s *string) *UserUpdateOne {
+	if s != nil {
+		uuo.SetStateToken(*s)
+	}
+	return uuo
 }
 
 // SetNotionToken sets the "notion_token" field.
@@ -189,6 +220,9 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := uuo.mutation.StateToken(); ok {
+		_spec.SetField(user.FieldStateToken, field.TypeString, value)
 	}
 	if value, ok := uuo.mutation.NotionToken(); ok {
 		_spec.SetField(user.FieldNotionToken, field.TypeString, value)
