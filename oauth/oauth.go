@@ -29,7 +29,6 @@ var (
 )
 
 func Handler(c echo.Context) (notion.Interface, string, string, error) {
-
 	oauthClientSecret := os.Getenv(OAUTH_CLIENT_SECRET)
 	oauthClientId := os.Getenv(OAUTH_CLIENT_ID)
 	redirectUrl := os.Getenv(REDIRECT_URL)
@@ -66,6 +65,7 @@ func Handler(c echo.Context) (notion.Interface, string, string, error) {
 	req.SetBasicAuth(oauthClientId, oauthClientSecret)
 	req.Header.Add("Content-Type", "application/json")
 
+	log.Println("got request:", req)
 	rsp, err := client.Do(req)
 	if err != nil {
 		log.Fatal(err)
