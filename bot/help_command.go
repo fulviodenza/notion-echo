@@ -22,6 +22,9 @@ func NewHelpCommand(bot *Bot) types.Command {
 }
 
 func (hc *HelpCommand) Execute(ctx context.Context, update *objects.Update) {
+	if hc == nil || hc.Bot == nil {
+		return
+	}
 	helpMessage := hc.Bot.GetHelpMessage()
 
 	err := hc.Bot.SendMessage(helpMessage, update, true)

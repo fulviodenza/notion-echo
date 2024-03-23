@@ -10,8 +10,6 @@ import (
 	"github.com/notion-echo/bot"
 )
 
-var redirectURL = "http://localhost:8080/"
-
 func main() {
 	var err error
 	ctx := context.Background()

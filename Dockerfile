@@ -5,5 +5,7 @@ WORKDIR /app
 ADD . /app
 
 RUN go build -o /notion-echo
-
-CMD [ "/notion-echo" ]
+COPY run.sh /run.sh
+COPY .env /.env
+RUN chmod +x /run.sh
+CMD [ "./run.sh" ]
