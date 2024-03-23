@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
-	"net/url"
 	"os"
 
 	"github.com/SakoDroid/telego/v2/objects"
@@ -29,8 +28,7 @@ func (rc *RegisterCommand) Execute(ctx context.Context, update *objects.Update) 
 		return
 	}
 
-	redirectURL := os.Getenv(REDIRECT_URL)
-	oauthClientID := os.Getenv(OAUTH_CLIENT_ID)
+	oauthURL := os.Getenv(OAUTH_URL)
 
 	stateToken, err := generateStateToken()
 	if err != nil {
@@ -42,12 +40,6 @@ func (rc *RegisterCommand) Execute(ctx context.Context, update *objects.Update) 
 		return
 	}
 	rc.Bot.SetNotionUser(stateToken)
-
-	var oauthURL = "https://api.notion.com/v1/oauth/authorize?" +
-		"client_id=" + url.QueryEscape(oauthClientID) +
-		"&redirect_uri=" + redirectURL +
-		"&state=" + url.QueryEscape(stateToken) +
-		"&response_type=code"
 
 	rc.Bot.SendMessage(oauthURL, update, false)
 }
