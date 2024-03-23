@@ -122,6 +122,10 @@ func (b *Bot) RunOauth2Endpoint() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
+	e.GET("/healthz", func(c echo.Context) error {
+		c.JSON(200, "ok")
+		return nil
+	})
 	e.GET("/oauth2", func(c echo.Context) error {
 		log.Println("got request with context: %w ", c)
 		notionToken, token, err := oauth.Handler(c)
