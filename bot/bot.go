@@ -122,7 +122,7 @@ func (b *Bot) RunOauth2Endpoint() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
-	e.GET("/", func(c echo.Context) error {
+	e.GET("/oauth2", func(c echo.Context) error {
 		client, notionToken, token, err := oauth.Handler(c)
 		state := c.QueryParam("state")
 		fmt.Printf("state token: %s\n", state)
