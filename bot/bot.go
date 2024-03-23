@@ -2,10 +2,15 @@ package bot
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"strings"
+	"sync"
 
+	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
+	"github.com/notion-echo/oauth"
 	"github.com/notion-echo/parser"
 
 	"github.com/notion-echo/bot/types"
@@ -14,9 +19,7 @@ import (
 	bt "github.com/SakoDroid/telego/v2"
 	cfg "github.com/SakoDroid/telego/v2/configs"
 	objs "github.com/SakoDroid/telego/v2/objects"
-	"github.com/jomei/notionapi"
 	"github.com/notion-echo/adapters/db"
-	notion "github.com/notion-echo/adapters/notion"
 )
 
 const (
@@ -24,7 +27,10 @@ const (
 	NOTION_DATABASE_ID = "NOTION_DATABASE_ID"
 	TELEGRAM_TOKEN     = "TELEGRAM_TOKEN"
 	DATABASE_URL       = "DATABASE_URL"
-	MAX_LEN_MESSAGE    = 4096
+	OAUTH_CLIENT_ID    = "OAUTH_CLIENT_ID"
+	REDIRECT_URL       = "REDIRECT_URL"
+
+	MAX_LEN_MESSAGE = 4096
 )
 
 const (
@@ -33,8 +39,9 @@ const (
 )
 
 const (
-	COMMAND_NOTE = "/note"
-	COMMAND_HELP = "/help"
+	COMMAND_NOTE     = "/note"
+	COMMAND_HELP     = "/help"
+	COMMAND_REGISTER = "/register"
 )
 
 const (
@@ -44,8 +51,9 @@ const (
 )
 
 type Bot struct {
+	sync.RWMutex
 	TelegramClient bt.Bot
-	NotionClient   notion.Interface
+	NotionClient   map[string]string
 	UserRepo       db.UserRepoInterface
 	helpMessage    string
 }
@@ -81,9 +89,6 @@ func NewBotWithConfig() (*Bot, error) {
 	}
 	bot.SetTelegramClient(*b)
 
-	notionClient := notion.NewNotionService(notionapi.NewClient(notionapi.Token(notionToken)))
-	bot.SetNotionClient(notionClient)
-
 	userRepo, err := db.SetupAndConnectDatabase(databaseUrl)
 	if err != nil {
 		return nil, err
@@ -114,16 +119,38 @@ func (b *Bot) Start(ctx context.Context) {
 	}
 }
 
+func (b *Bot) RunOauth2Endpoint() {
+	e := echo.New()
+	e.Use(middleware.Logger())
+	e.Use(middleware.Recover())
+
+	e.GET("/", func(c echo.Context) error {
+		client, notionToken, token, err := oauth.Handler(c)
+		state := c.QueryParam("state")
+		fmt.Printf("state token: %s\n", state)
+		b.UserRepo.SaveNotionTokenByStateToken(context.Background(), notionToken, state)
+		b.SetNotionClient(token, notionToken)
+		fmt.Println(b.NotionClient)
+		c.JSON(200, client)
+		return err
+	})
+	e.Logger.Fatal(e.StartTLS(":8080", "certs/cert.pem", "certs/key.pem"))
+}
+
 func (b *Bot) GetHelpMessage() string {
 	return b.helpMessage
 }
 
-func (b *Bot) SetNotionClient(client notion.Interface) {
-	b.NotionClient = client
+func (b *Bot) SetNotionClient(token string, notionToken string) {
+	b.Lock()
+	defer b.Unlock()
+	b.NotionClient[token] = notionToken
 }
 
-func (b *Bot) GetNotionClient() notion.Interface {
-	return b.NotionClient
+func (b *Bot) GetNotionClient(userId string) string {
+	b.RLock()
+	defer b.RUnlock()
+	return b.NotionClient[userId]
 }
 
 func (b *Bot) SendMessage(msg string, up *objs.Update, formatMarkdown bool) error {
@@ -173,9 +200,17 @@ func (b *Bot) SetUserRepo(db db.UserRepoInterface) {
 func (b *Bot) GetUserRepo() db.UserRepoInterface {
 	return b.UserRepo
 }
+
+func (b *Bot) SetNotionUser(token string) {
+	if b.NotionClient == nil {
+		b.NotionClient = make(map[string]string)
+	}
+	b.NotionClient[token] = ""
+}
 func (b *Bot) initializeHandlers() map[string]func(ctx context.Context, up *objs.Update) {
 	return map[string]func(ctx context.Context, up *objs.Update){
-		COMMAND_NOTE: NewNoteCommand(b),
-		COMMAND_HELP: NewHelpCommand(b),
+		COMMAND_NOTE:     NewNoteCommand(b),
+		COMMAND_HELP:     NewHelpCommand(b),
+		COMMAND_REGISTER: NewRegisterCommand(b),
 	}
 }

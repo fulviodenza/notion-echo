@@ -261,12 +261,12 @@ func (uq *UserQuery) Clone() *UserQuery {
 // Example:
 //
 //	var v []struct {
-//		NotionToken string `json:"notion_token,omitempty"`
+//		StateToken string `json:"state_token,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.User.Query().
-//		GroupBy(user.FieldNotionToken).
+//		GroupBy(user.FieldStateToken).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (uq *UserQuery) GroupBy(field string, fields ...string) *UserGroupBy {
@@ -284,11 +284,11 @@ func (uq *UserQuery) GroupBy(field string, fields ...string) *UserGroupBy {
 // Example:
 //
 //	var v []struct {
-//		NotionToken string `json:"notion_token,omitempty"`
+//		StateToken string `json:"state_token,omitempty"`
 //	}
 //
 //	client.User.Query().
-//		Select(user.FieldNotionToken).
+//		Select(user.FieldStateToken).
 //		Scan(ctx, &v)
 func (uq *UserQuery) Select(fields ...string) *UserSelect {
 	uq.ctx.Fields = append(uq.ctx.Fields, fields...)

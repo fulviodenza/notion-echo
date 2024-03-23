@@ -6,7 +6,6 @@ import (
 	bt "github.com/SakoDroid/telego/v2"
 	"github.com/SakoDroid/telego/v2/objects"
 	"github.com/notion-echo/adapters/db"
-	"github.com/notion-echo/adapters/notion"
 	"github.com/notion-echo/bot/types"
 )
 
@@ -80,5 +79,6 @@ var (
 	}
 )
 
-func (b *MockBot) SetNotionClient(client notion.Interface) {}
-func (b *MockBot) GetNotionClient() notion.Interface       { return nil }
+func (b *MockBot) SetNotionClient(token string, notionToken string) {}
+func (b *MockBot) GetNotionClient(userId string) string             { return "" }
+func (b *MockBot) SetNotionUser(token string)                       {}

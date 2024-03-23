@@ -11,6 +11,7 @@ var (
 	// UsersColumns holds the columns for the "users" table.
 	UsersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "state_token", Type: field.TypeString, Default: ""},
 		{Name: "notion_token", Type: field.TypeString, Default: ""},
 	}
 	// UsersTable holds the schema information for the "users" table.

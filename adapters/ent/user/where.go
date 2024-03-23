@@ -52,9 +52,79 @@ func IDLTE(id int) predicate.User {
 	return predicate.User(sql.FieldLTE(FieldID, id))
 }
 
+// StateToken applies equality check predicate on the "state_token" field. It's identical to StateTokenEQ.
+func StateToken(v string) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldStateToken, v))
+}
+
 // NotionToken applies equality check predicate on the "notion_token" field. It's identical to NotionTokenEQ.
 func NotionToken(v string) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldNotionToken, v))
+}
+
+// StateTokenEQ applies the EQ predicate on the "state_token" field.
+func StateTokenEQ(v string) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldStateToken, v))
+}
+
+// StateTokenNEQ applies the NEQ predicate on the "state_token" field.
+func StateTokenNEQ(v string) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldStateToken, v))
+}
+
+// StateTokenIn applies the In predicate on the "state_token" field.
+func StateTokenIn(vs ...string) predicate.User {
+	return predicate.User(sql.FieldIn(FieldStateToken, vs...))
+}
+
+// StateTokenNotIn applies the NotIn predicate on the "state_token" field.
+func StateTokenNotIn(vs ...string) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldStateToken, vs...))
+}
+
+// StateTokenGT applies the GT predicate on the "state_token" field.
+func StateTokenGT(v string) predicate.User {
+	return predicate.User(sql.FieldGT(FieldStateToken, v))
+}
+
+// StateTokenGTE applies the GTE predicate on the "state_token" field.
+func StateTokenGTE(v string) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldStateToken, v))
+}
+
+// StateTokenLT applies the LT predicate on the "state_token" field.
+func StateTokenLT(v string) predicate.User {
+	return predicate.User(sql.FieldLT(FieldStateToken, v))
+}
+
+// StateTokenLTE applies the LTE predicate on the "state_token" field.
+func StateTokenLTE(v string) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldStateToken, v))
+}
+
+// StateTokenContains applies the Contains predicate on the "state_token" field.
+func StateTokenContains(v string) predicate.User {
+	return predicate.User(sql.FieldContains(FieldStateToken, v))
+}
+
+// StateTokenHasPrefix applies the HasPrefix predicate on the "state_token" field.
+func StateTokenHasPrefix(v string) predicate.User {
+	return predicate.User(sql.FieldHasPrefix(FieldStateToken, v))
+}
+
+// StateTokenHasSuffix applies the HasSuffix predicate on the "state_token" field.
+func StateTokenHasSuffix(v string) predicate.User {
+	return predicate.User(sql.FieldHasSuffix(FieldStateToken, v))
+}
+
+// StateTokenEqualFold applies the EqualFold predicate on the "state_token" field.
+func StateTokenEqualFold(v string) predicate.User {
+	return predicate.User(sql.FieldEqualFold(FieldStateToken, v))
+}
+
+// StateTokenContainsFold applies the ContainsFold predicate on the "state_token" field.
+func StateTokenContainsFold(v string) predicate.User {
+	return predicate.User(sql.FieldContainsFold(FieldStateToken, v))
 }
 
 // NotionTokenEQ applies the EQ predicate on the "notion_token" field.

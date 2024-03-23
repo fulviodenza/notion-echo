@@ -2,12 +2,14 @@ package bot
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"strings"
 
 	"github.com/SakoDroid/telego/v2/objects"
 	"github.com/jomei/notionapi"
+	"github.com/notion-echo/adapters/notion"
 	"github.com/notion-echo/bot/types"
 )
 
@@ -33,9 +35,21 @@ func NewNoteCommand(bot *Bot) types.Command {
 }
 
 func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
+	if cc == nil || cc.Bot == nil {
+		return
+	}
 	blocks := &notionapi.AppendBlockChildrenRequest{}
 
-	page, err := cc.Bot.GetNotionClient().SearchPage(ctx, "Buffer")
+	user, err := cc.Bot.GetUserRepo().GetStateTokenById(ctx, update.Message.Chat.Id)
+	if err != nil {
+		return
+	}
+	// TODO: change this to make it get the state token from the
+	// db after having saved it in the db associating the message chat id.
+	token := cc.Bot.GetNotionClient(fmt.Sprintf("%v", user.StateToken))
+	notionClient := notion.NewNotionService(notionapi.NewClient(notionapi.Token(token)))
+
+	page, err := notionClient.SearchPage(ctx, "Buffer")
 	if err != nil {
 		return
 	}
@@ -51,7 +65,7 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
 	noteText := strings.Replace(update.Message.Text, "/note", "", 1)
 	blocks.Children = append(blocks.Children, buildCalloutBlock(noteText))
 
-	response, err := cc.Bot.GetNotionClient().Block().AppendChildren(ctx, notionapi.BlockID(page.ID), blocks)
+	response, err := notionClient.Block().AppendChildren(ctx, notionapi.BlockID(page.ID), blocks)
 	if err != nil {
 		log.Println(err)
 		cc.Bot.SendMessage(SaveNoteErr, update, false)

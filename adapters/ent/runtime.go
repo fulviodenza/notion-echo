@@ -13,8 +13,12 @@ import (
 func init() {
 	userFields := schema.User{}.Fields()
 	_ = userFields
+	// userDescStateToken is the schema descriptor for state_token field.
+	userDescStateToken := userFields[1].Descriptor()
+	// user.DefaultStateToken holds the default value on creation for the state_token field.
+	user.DefaultStateToken = userDescStateToken.Default.(string)
 	// userDescNotionToken is the schema descriptor for notion_token field.
-	userDescNotionToken := userFields[1].Descriptor()
+	userDescNotionToken := userFields[2].Descriptor()
 	// user.DefaultNotionToken holds the default value on creation for the notion_token field.
 	user.DefaultNotionToken = userDescNotionToken.Default.(string)
 }
