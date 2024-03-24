@@ -119,11 +119,6 @@ func (b *Bot) Start(ctx context.Context) {
 
 func (b *Bot) RunOauth2Endpoint() {
 	e := echo.New()
-	e.Pre(middleware.HTTPSRedirectWithConfig(middleware.RedirectConfig{
-		Skipper: func(c echo.Context) bool {
-			return c.Request().Header.Get("X-Forwarded-Proto") == "https"
-		},
-	}))
 
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
