@@ -143,7 +143,7 @@ func (b *Bot) RunOauth2Endpoint() {
 		fmt.Println(b.NotionClient)
 		return err
 	})
-	e.Logger.Fatal(e.StartAutoTLS(":443"))
+	e.Logger.Fatal(e.Start(":80"))
 }
 
 func (b *Bot) GetHelpMessage() string {
