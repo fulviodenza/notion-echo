@@ -11,23 +11,23 @@ import (
 var _ types.ICommand = (*HelpCommand)(nil)
 
 type HelpCommand struct {
-	Bot types.IBot
+	types.IBot
 }
 
 func NewHelpCommand(bot *Bot) types.Command {
 	hc := HelpCommand{
-		Bot: bot,
+		IBot: bot,
 	}
 	return hc.Execute
 }
 
 func (hc *HelpCommand) Execute(ctx context.Context, update *objects.Update) {
-	if hc == nil || hc.Bot == nil {
+	if hc == nil || hc.IBot == nil {
 		return
 	}
-	helpMessage := hc.Bot.GetHelpMessage()
+	helpMessage := hc.GetHelpMessage()
 
-	err := hc.Bot.SendMessage(helpMessage, update, true)
+	err := hc.SendMessage(helpMessage, update, true)
 	if err != nil {
 		log.Printf("Failed to send help message: %v", err)
 	}
