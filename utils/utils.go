@@ -1,67 +1,27 @@
 package utils
 
 import (
-	"math/rand"
-	"strconv"
-	"time"
+	"io"
+	"log"
+	"os"
 )
 
 const MAX_LEN_MESSAGE = 4096
 
-func MakeTimestamp(len int) int64 {
-	rand.Seed(time.Now().Unix())
-	return (time.Now().UnixNano() / int64(time.Millisecond)) % int64(len)
-}
-
-func Pick[K comparable, V any](m map[K]V) V {
-	k := rand.Intn(len(m))
-	for _, x := range m {
-		if k == 0 {
-			return x
-		}
-		k--
-	}
-	panic("unreachable")
-}
-
-func AggregateTags(tags []string) string {
-	msg := ""
-	for _, s := range tags {
-		msg += "- " + s + "\n"
-	}
-
-	return msg
-}
-
-func ValidateTime(times []string, tz string) bool {
-	// the only accepted format is HH:MM, so, with 2 elements in the times array
-	if len(times) != 2 {
-		return false
-	}
-
-	hours, err := strconv.Atoi(times[0])
+func Read(filename string, dst *[]byte) error {
+	f, err := os.Open(filename)
 	if err != nil {
-		return false
+		log.Fatal("[parse]: ", err)
+		return err
 	}
-	minutes, err := strconv.Atoi(times[1])
+
+	bytes, err := io.ReadAll(f)
 	if err != nil {
-		return false
+		return err
 	}
 
-	// validate timezone
-	_, err = time.LoadLocation(tz)
-	if err != nil {
-		return false
-	}
-
-	if hours < 0 || hours >= 24 {
-		return false
-	}
-	if minutes < 0 || minutes >= 60 {
-		return false
-	}
-
-	return true
+	*dst = bytes
+	return nil
 }
 
 func SplitString(s string) []string {

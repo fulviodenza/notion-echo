@@ -26,7 +26,7 @@ var (
 	REDIRECT_URL        = "REDIRECT_URL"
 )
 
-func Handler(c echo.Context) (string, string, error) {
+func Handler(c echo.Context) (string, error) {
 	oauthClientSecret := os.Getenv(OAUTH_CLIENT_SECRET)
 	oauthClientId := os.Getenv(OAUTH_CLIENT_ID)
 	redirectUrl := os.Getenv(REDIRECT_URL)
@@ -39,9 +39,7 @@ func Handler(c echo.Context) (string, string, error) {
 	}
 
 	code := c.QueryParam("code")
-	log.Println("got request with code ", code)
 
-	stateToken := c.QueryParam("state")
 	b, err := json.Marshal(&struct {
 		GrantType   string `json:"grant_type,omitempty"`
 		Code        string `json:"code,omitempty"`
@@ -53,22 +51,21 @@ func Handler(c echo.Context) (string, string, error) {
 	})
 	if err != nil {
 		log.Fatal(err)
-		return "", "", err
+		return "", err
 	}
 	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, "https://api.notion.com/v1/oauth/token", bytes.NewReader(b))
 	if err != nil {
 		log.Fatal(err)
-		return "", "", err
+		return "", err
 	}
+
 	req.SetBasicAuth(oauthClientId, oauthClientSecret)
 	req.Header.Add("Content-Type", "application/json")
-
-	log.Println("got request:", req)
 
 	rsp, err := client.Do(req)
 	if err != nil {
 		log.Fatal(err)
-		return "", "", err
+		return "", err
 	}
 
 	defer rsp.Body.Close()
@@ -76,8 +73,8 @@ func Handler(c echo.Context) (string, string, error) {
 	var body OAuthAccessToken
 	if err = json.NewDecoder(rsp.Body).Decode(&body); err != nil {
 		fmt.Println(err)
-		return "", "", err
+		return "", err
 	}
 
-	return body.AccessToken, stateToken, nil
+	return body.AccessToken, nil
 }

@@ -29,16 +29,17 @@ func (ur *UserRepo) SaveUser(ctx context.Context, id int, stateToken string) (*e
 		SetID(id).
 		SetStateToken(stateToken).
 		Save(ctx)
-	isAlreadyExistsErr := strings.Contains(err.Error(), "duplicate key value violates unique constraint")
-	if err != nil && !isAlreadyExistsErr {
-		return nil, fmt.Errorf("failed creating user: %w", err)
-	}
+	if err != nil {
+		isAlreadyExistsErr := strings.Contains(err.Error(), "duplicate key value violates unique constraint")
+		if !isAlreadyExistsErr {
+			return nil, fmt.Errorf("failed creating user: %w", err)
+		}
 
-	if isAlreadyExistsErr {
 		err := ur.Client.User.Update().SetStateToken(stateToken).Where(user.IDEQ(id)).Exec(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("failed creating user: %w", err)
 		}
+		return u, nil
 	}
 	log.Println("user was created: ", u)
 	return u, nil
