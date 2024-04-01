@@ -2,7 +2,6 @@ package bot
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -11,6 +10,7 @@ import (
 	"github.com/jomei/notionapi"
 	"github.com/notion-echo/adapters/notion"
 	"github.com/notion-echo/bot/types"
+	"github.com/notion-echo/utils"
 )
 
 var _ types.ICommand = (*NoteCommand)(nil)
@@ -40,15 +40,15 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
 	}
 	blocks := &notionapi.AppendBlockChildrenRequest{}
 
-	user, err := cc.GetUserRepo().GetStateTokenById(ctx, update.Message.Chat.Id)
+	tokenEnc, err := cc.GetUserRepo().GetNotionTokenByID(ctx, update.Message.Chat.Id)
+	if err != nil || tokenEnc == "" {
+		return
+	}
+	token, err := utils.DecryptString(tokenEnc)
 	if err != nil {
 		return
 	}
-	// TODO: change this to make it get the state token from the
-	// db after having saved it in the db associating the message chat id.
-	token := cc.GetNotionClient(fmt.Sprintf("%v", user.StateToken))
 	notionClient := notion.NewNotionService(notionapi.NewClient(notionapi.Token(token)))
-
 	page, err := notionClient.SearchPage(ctx, "Buffer")
 	if err != nil {
 		return
@@ -65,14 +65,12 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
 	noteText := strings.Replace(update.Message.Text, "/note", "", 1)
 	blocks.Children = append(blocks.Children, buildCalloutBlock(noteText))
 
-	response, err := notionClient.Block().AppendChildren(ctx, notionapi.BlockID(page.ID), blocks)
+	_, err = notionClient.Block().AppendChildren(ctx, notionapi.BlockID(page.ID), blocks)
 	if err != nil {
 		log.Println(err)
 		cc.SendMessage(SaveNoteErr, update, false)
 		return
 	}
-
-	log.Println("notion response: ", response)
 
 	cc.SendMessage(NOTE_SAVED, update, false)
 }
