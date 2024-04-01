@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"sync"
@@ -11,7 +13,6 @@ import (
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	"github.com/notion-echo/oauth"
-	"github.com/notion-echo/parser"
 
 	"github.com/notion-echo/bot/types"
 	"github.com/notion-echo/utils"
@@ -28,6 +29,7 @@ const (
 	TELEGRAM_TOKEN     = "TELEGRAM_TOKEN"
 	DATABASE_URL       = "DATABASE_URL"
 	OAUTH_URL          = "OAUTH_URL"
+	PORT               = "PORT"
 
 	MAX_LEN_MESSAGE = 4096
 )
@@ -67,6 +69,7 @@ var (
 	notionDatabaseId = os.Getenv(NOTION_DATABASE_ID)
 	telegramToken    = os.Getenv(TELEGRAM_TOKEN)
 	databaseUrl      = os.Getenv(DATABASE_URL)
+	port             = os.Getenv(PORT)
 )
 
 func NewBotWithConfig() (*Bot, error) {
@@ -110,7 +113,7 @@ func (b *Bot) Start(ctx context.Context) {
 		c := c
 		f := f
 		b.TelegramClient.AddHandler(c, func(u *objs.Update) {
-			if strings.Contains(u.Message.Text, c) {
+			if strings.Contains(u.Message.Text, c) || strings.Contains(u.Message.Caption, c) {
 				f(ctx, u)
 			}
 		}, PRIVATE_CHAT_TYPE, GROUP_CHAT_TYPE, SUPERGROUP_CHAT_TYPE)
@@ -119,7 +122,6 @@ func (b *Bot) Start(ctx context.Context) {
 
 func (b *Bot) RunOauth2Endpoint() {
 	e := echo.New()
-
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
@@ -132,23 +134,37 @@ func (b *Bot) RunOauth2Endpoint() {
 		return nil
 	})
 	e.GET("/oauth2", func(c echo.Context) error {
-		log.Println("got request with context: %w ", c)
-		notionToken, token, err := oauth.Handler(c)
+		notionToken, err := oauth.Handler(c)
 		if err != nil {
-			log.Println("got error: %w", err)
+			return c.JSON(http.StatusInternalServerError, err.Error())
 		}
 
 		state := c.QueryParam("state")
-		_, err = b.UserRepo.SaveNotionTokenByStateToken(context.Background(), notionToken, state)
+		_, err = b.GetUserRepo().SaveNotionTokenByStateToken(context.Background(), notionToken, state)
 		if err != nil {
-			log.Println("got error: %w", err)
+			return c.JSON(http.StatusInternalServerError, err.Error())
 		}
 
-		b.SetNotionClient(token, notionToken)
-		fmt.Println(b.NotionClient)
-		return err
+		b.SetNotionClient(state, notionToken)
+		return c.JSON(http.StatusOK, "ok")
 	})
-	e.Logger.Fatal(e.StartAutoTLS(":443"))
+	e.GET("/start_oauth", func(c echo.Context) error {
+		state := c.QueryParam("state")
+
+		if state == "" {
+			return echo.NewHTTPError(http.StatusBadRequest, "State parameter is missing")
+		}
+
+		params := url.Values{}
+		params.Set("state", state)
+
+		notionOAuthURL := fmt.Sprintf(os.Getenv("OAUTH_URL"), params.Encode())
+
+		// Redirect to Notion's OAuth page.
+		return c.Redirect(http.StatusFound, notionOAuthURL)
+	})
+	address := fmt.Sprintf("localhost:%s", port)
+	e.Logger.Fatal(e.Start(address))
 }
 
 func (b *Bot) GetHelpMessage() string {
@@ -158,6 +174,9 @@ func (b *Bot) GetHelpMessage() string {
 func (b *Bot) SetNotionClient(token string, notionToken string) {
 	b.Lock()
 	defer b.Unlock()
+	if b.NotionClient == nil {
+		b.NotionClient = make(map[string]string)
+	}
 	b.NotionClient[token] = notionToken
 }
 
@@ -194,7 +213,7 @@ func (b *Bot) SendMessage(msg string, up *objs.Update, formatMarkdown bool) erro
 
 func (b *Bot) loadHelpMessage() {
 	helpMessage := make([]byte, 0)
-	err := parser.Read(HELP_MESSAGE_ASSET, &helpMessage)
+	err := utils.Read(HELP_MESSAGE_ASSET, &helpMessage)
 	if err != nil {
 		log.Fatalf("Failed to load help message: %v", err)
 	}

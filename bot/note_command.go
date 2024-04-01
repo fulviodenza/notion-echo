@@ -24,29 +24,29 @@ const (
 var BotEmoji = notionapi.Emoji("🤖")
 
 type NoteCommand struct {
-	Bot types.IBot
+	types.IBot
 }
 
 func NewNoteCommand(bot *Bot) types.Command {
 	hc := NoteCommand{
-		Bot: bot,
+		IBot: bot,
 	}
 	return hc.Execute
 }
 
 func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
-	if cc == nil || cc.Bot == nil {
+	if cc == nil || cc.IBot == nil {
 		return
 	}
 	blocks := &notionapi.AppendBlockChildrenRequest{}
 
-	user, err := cc.Bot.GetUserRepo().GetStateTokenById(ctx, update.Message.Chat.Id)
+	user, err := cc.GetUserRepo().GetStateTokenById(ctx, update.Message.Chat.Id)
 	if err != nil {
 		return
 	}
 	// TODO: change this to make it get the state token from the
 	// db after having saved it in the db associating the message chat id.
-	token := cc.Bot.GetNotionClient(fmt.Sprintf("%v", user.StateToken))
+	token := cc.GetNotionClient(fmt.Sprintf("%v", user.StateToken))
 	notionClient := notion.NewNotionService(notionapi.NewClient(notionapi.Token(token)))
 
 	page, err := notionClient.SearchPage(ctx, "Buffer")
@@ -54,7 +54,7 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
 		return
 	}
 
-	paths, err := downloadAndUploadImage(cc.Bot, update.Message.Photo)
+	paths, err := downloadAndUploadImage(cc.IBot, update.Message.Photo)
 	if err != nil {
 		return
 	}
@@ -68,13 +68,13 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
 	response, err := notionClient.Block().AppendChildren(ctx, notionapi.BlockID(page.ID), blocks)
 	if err != nil {
 		log.Println(err)
-		cc.Bot.SendMessage(SaveNoteErr, update, false)
+		cc.SendMessage(SaveNoteErr, update, false)
 		return
 	}
 
 	log.Println("notion response: ", response)
 
-	cc.Bot.SendMessage(NOTE_SAVED, update, false)
+	cc.SendMessage(NOTE_SAVED, update, false)
 }
 
 func downloadAndUploadImage(bot types.IBot, ps []objects.PhotoSize) ([]string, error) {

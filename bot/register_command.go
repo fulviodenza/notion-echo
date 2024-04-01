@@ -4,6 +4,8 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"fmt"
+	"net/url"
 	"os"
 
 	"github.com/SakoDroid/telego/v2/objects"
@@ -13,35 +15,27 @@ import (
 var _ types.ICommand = (*RegisterCommand)(nil)
 
 type RegisterCommand struct {
-	Bot types.IBot
+	types.IBot
 }
 
 func NewRegisterCommand(bot *Bot) types.Command {
 	hc := RegisterCommand{
-		Bot: bot,
+		IBot: bot,
 	}
 	return hc.Execute
 }
 
 func (rc *RegisterCommand) Execute(ctx context.Context, update *objects.Update) {
-	if rc == nil || rc.Bot == nil {
-		return
-	}
-
-	oauthURL := os.Getenv(OAUTH_URL)
-
 	stateToken, err := generateStateToken()
 	if err != nil {
 		return
 	}
-
-	_, err = rc.Bot.GetUserRepo().SaveUser(ctx, update.Message.Chat.Id, stateToken)
+	_, err = rc.IBot.GetUserRepo().SaveUser(ctx, update.Message.Chat.Id, stateToken)
 	if err != nil {
 		return
 	}
-	rc.Bot.SetNotionUser(stateToken)
-
-	rc.Bot.SendMessage(oauthURL, update, false)
+	oauthURL := fmt.Sprintf("%s&state=%s", os.Getenv("OAUTH_URL"), url.QueryEscape(stateToken))
+	rc.SendMessage(oauthURL, update, false)
 }
 
 func generateStateToken() (string, error) {
