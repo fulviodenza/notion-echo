@@ -134,6 +134,7 @@ func (b *Bot) RunOauth2Endpoint() {
 		return nil
 	})
 	e.GET("/oauth2", func(c echo.Context) error {
+		log.Println("received registration request")
 		notionToken, err := oauth.Handler(c)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, err.Error())
@@ -146,7 +147,8 @@ func (b *Bot) RunOauth2Endpoint() {
 		}
 
 		b.SetNotionClient(state, notionToken)
-		return c.JSON(http.StatusOK, "ok")
+		c.JSON(http.StatusOK, "ok")
+		return nil
 	})
 	e.GET("/start_oauth", func(c echo.Context) error {
 		state := c.QueryParam("state")
