@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"strings"
 	"sync"
@@ -137,33 +136,19 @@ func (b *Bot) RunOauth2Endpoint() {
 		log.Println("received registration request")
 		notionToken, err := oauth.Handler(c)
 		if err != nil {
-			return c.JSON(http.StatusInternalServerError, err.Error())
+			c.JSON(http.StatusInternalServerError, err.Error())
+			return nil
 		}
 
 		state := c.QueryParam("state")
 		_, err = b.GetUserRepo().SaveNotionTokenByStateToken(context.Background(), notionToken, state)
 		if err != nil {
-			return c.JSON(http.StatusInternalServerError, err.Error())
+			c.JSON(http.StatusInternalServerError, err.Error())
+			return nil
 		}
-
 		b.SetNotionClient(state, notionToken)
 		c.JSON(http.StatusOK, "ok")
 		return nil
-	})
-	e.GET("/start_oauth", func(c echo.Context) error {
-		state := c.QueryParam("state")
-
-		if state == "" {
-			return echo.NewHTTPError(http.StatusBadRequest, "State parameter is missing")
-		}
-
-		params := url.Values{}
-		params.Set("state", state)
-
-		notionOAuthURL := fmt.Sprintf(os.Getenv("OAUTH_URL"), params.Encode())
-
-		// Redirect to Notion's OAuth page.
-		return c.Redirect(http.StatusFound, notionOAuthURL)
 	})
 	address := fmt.Sprintf("0.0.0.0:%s", port)
 	e.Logger.Fatal(e.Start(address))

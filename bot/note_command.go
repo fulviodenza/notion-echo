@@ -44,11 +44,7 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
 	if err != nil {
 		return
 	}
-	// TODO: change this to make it get the state token from the
-	// db after having saved it in the db associating the message chat id.
-	token := cc.GetNotionClient(fmt.Sprintf("%v", user.StateToken))
 	notionClient := notion.NewNotionService(notionapi.NewClient(notionapi.Token(token)))
-
 	page, err := notionClient.SearchPage(ctx, "Buffer")
 	if err != nil {
 		return
@@ -65,14 +61,12 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
 	noteText := strings.Replace(update.Message.Text, "/note", "", 1)
 	blocks.Children = append(blocks.Children, buildCalloutBlock(noteText))
 
-	response, err := notionClient.Block().AppendChildren(ctx, notionapi.BlockID(page.ID), blocks)
+	_, err = notionClient.Block().AppendChildren(ctx, notionapi.BlockID(page.ID), blocks)
 	if err != nil {
 		log.Println(err)
 		cc.SendMessage(SaveNoteErr, update, false)
 		return
 	}
-
-	log.Println("notion response: ", response)
 
 	cc.SendMessage(NOTE_SAVED, update, false)
 }
