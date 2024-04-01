@@ -42,6 +42,7 @@ const (
 	COMMAND_NOTE     = "/note"
 	COMMAND_HELP     = "/help"
 	COMMAND_REGISTER = "/register"
+	COMMAND_START    = "/start"
 )
 
 const (
@@ -62,7 +63,6 @@ type Bot struct {
 // if the interface will not be followed, this will not compile
 var _ types.IBot = (*Bot)(nil)
 
-// get variables from env
 var (
 	notionToken      = os.Getenv(NOTION_TOKEN)
 	notionDatabaseId = os.Getenv(NOTION_DATABASE_ID)
@@ -237,5 +237,6 @@ func (b *Bot) initializeHandlers() map[string]func(ctx context.Context, up *objs
 		COMMAND_NOTE:     NewNoteCommand(b),
 		COMMAND_HELP:     NewHelpCommand(b),
 		COMMAND_REGISTER: NewRegisterCommand(b),
+		COMMAND_START:    NewHelpCommand(b),
 	}
 }
