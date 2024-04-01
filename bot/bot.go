@@ -14,41 +14,14 @@ import (
 	"github.com/notion-echo/oauth"
 
 	"github.com/notion-echo/bot/types"
+	"github.com/notion-echo/oauth"
 	"github.com/notion-echo/utils"
 
 	bt "github.com/SakoDroid/telego/v2"
 	cfg "github.com/SakoDroid/telego/v2/configs"
 	objs "github.com/SakoDroid/telego/v2/objects"
-	"github.com/notion-echo/adapters/db"
-)
-
-const (
-	NOTION_TOKEN       = "NOTION_TOKEN"
-	NOTION_DATABASE_ID = "NOTION_DATABASE_ID"
-	TELEGRAM_TOKEN     = "TELEGRAM_TOKEN"
-	DATABASE_URL       = "DATABASE_URL"
-	OAUTH_URL          = "OAUTH_URL"
-	PORT               = "PORT"
-
-	MAX_LEN_MESSAGE = 4096
-)
-
-const (
-	CATEGORIES_ASSET   = "./assets/categories.txt"
-	HELP_MESSAGE_ASSET = "./assets/help_message.txt"
-)
-
-const (
-	COMMAND_NOTE     = "/note"
-	COMMAND_HELP     = "/help"
-	COMMAND_REGISTER = "/register"
-	COMMAND_START    = "/start"
-)
-
-const (
-	PRIVATE_CHAT_TYPE    = "private"
-	GROUP_CHAT_TYPE      = "group"
-	SUPERGROUP_CHAT_TYPE = "supergroup"
+	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
 )
 
 type Bot struct {
@@ -64,11 +37,11 @@ type Bot struct {
 var _ types.IBot = (*Bot)(nil)
 
 var (
-	notionToken      = os.Getenv(NOTION_TOKEN)
-	notionDatabaseId = os.Getenv(NOTION_DATABASE_ID)
-	telegramToken    = os.Getenv(TELEGRAM_TOKEN)
-	databaseUrl      = os.Getenv(DATABASE_URL)
-	port             = os.Getenv(PORT)
+	notionToken      = os.Getenv(utils.NOTION_TOKEN)
+	notionDatabaseId = os.Getenv(utils.NOTION_DATABASE_ID)
+	telegramToken    = os.Getenv(utils.TELEGRAM_TOKEN)
+	databaseUrl      = os.Getenv(utils.DATABASE_URL)
+	port             = os.Getenv(utils.PORT)
 )
 
 func NewBotWithConfig() (*Bot, error) {
@@ -115,7 +88,7 @@ func (b *Bot) Start(ctx context.Context) {
 			if strings.Contains(u.Message.Text, c) || strings.Contains(u.Message.Caption, c) {
 				f(ctx, u)
 			}
-		}, PRIVATE_CHAT_TYPE, GROUP_CHAT_TYPE, SUPERGROUP_CHAT_TYPE)
+		}, utils.PRIVATE_CHAT_TYPE, utils.GROUP_CHAT_TYPE, utils.SUPERGROUP_CHAT_TYPE)
 	}
 }
 
@@ -184,7 +157,7 @@ func (b *Bot) SendMessage(msg string, up *objs.Update, formatMarkdown bool) erro
 		parseMode = "Markdown"
 	}
 
-	if len(msg) >= MAX_LEN_MESSAGE {
+	if len(msg) >= utils.MAX_LEN_MESSAGE {
 		msgs := utils.SplitString(msg)
 		for _, m := range msgs {
 			_, err := b.TelegramClient.SendMessage(up.Message.Chat.Id, m, parseMode, 0, false, false)
@@ -205,7 +178,7 @@ func (b *Bot) SendMessage(msg string, up *objs.Update, formatMarkdown bool) erro
 
 func (b *Bot) loadHelpMessage() {
 	helpMessage := make([]byte, 0)
-	err := utils.Read(HELP_MESSAGE_ASSET, &helpMessage)
+	err := utils.Read(utils.HELP_MESSAGE_ASSET, &helpMessage)
 	if err != nil {
 		log.Fatalf("Failed to load help message: %v", err)
 	}
@@ -234,9 +207,9 @@ func (b *Bot) SetNotionUser(token string) {
 }
 func (b *Bot) initializeHandlers() map[string]func(ctx context.Context, up *objs.Update) {
 	return map[string]func(ctx context.Context, up *objs.Update){
-		COMMAND_NOTE:     NewNoteCommand(b),
-		COMMAND_HELP:     NewHelpCommand(b),
-		COMMAND_REGISTER: NewRegisterCommand(b),
-		COMMAND_START:    NewHelpCommand(b),
+		utils.COMMAND_NOTE:     NewNoteCommand(b),
+		utils.COMMAND_HELP:     NewHelpCommand(b),
+		utils.COMMAND_REGISTER: NewRegisterCommand(b),
+		utils.COMMAND_START:    NewHelpCommand(b),
 	}
 }
