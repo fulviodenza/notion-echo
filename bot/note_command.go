@@ -2,7 +2,6 @@ package bot
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -11,6 +10,7 @@ import (
 	"github.com/jomei/notionapi"
 	"github.com/notion-echo/adapters/notion"
 	"github.com/notion-echo/bot/types"
+	"github.com/notion-echo/utils"
 )
 
 var _ types.ICommand = (*NoteCommand)(nil)
@@ -40,7 +40,11 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
 	}
 	blocks := &notionapi.AppendBlockChildrenRequest{}
 
-	user, err := cc.GetUserRepo().GetStateTokenById(ctx, update.Message.Chat.Id)
+	tokenEnc, err := cc.GetUserRepo().GetNotionTokenByID(ctx, update.Message.Chat.Id)
+	if err != nil || tokenEnc == "" {
+		return
+	}
+	token, err := utils.DecryptString(tokenEnc)
 	if err != nil {
 		return
 	}

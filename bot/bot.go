@@ -141,7 +141,12 @@ func (b *Bot) RunOauth2Endpoint() {
 		}
 
 		state := c.QueryParam("state")
-		_, err = b.GetUserRepo().SaveNotionTokenByStateToken(context.Background(), notionToken, state)
+		notionTokenEnc, err := utils.EncryptString(notionToken)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err.Error())
+			return nil
+		}
+		_, err = b.GetUserRepo().SaveNotionTokenByStateToken(context.Background(), notionTokenEnc, state)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, err.Error())
 			return nil
