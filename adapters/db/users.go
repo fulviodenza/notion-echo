@@ -14,7 +14,7 @@ type UserRepoInterface interface {
 	SaveUser(ctx context.Context, id int, stateToken string) (*ent.User, error)
 	GetStateTokenById(ctx context.Context, id int) (*ent.User, error)
 	SaveNotionTokenByStateToken(ctx context.Context, notionToken, stateToken string) (*ent.User, error)
-	GetNotionTokenByID(ctx context.Context, id int) (*ent.User, error)
+	GetNotionTokenByID(ctx context.Context, id int) (string, error)
 }
 
 var _ UserRepoInterface = (*UserRepo)(nil)
@@ -24,7 +24,7 @@ type UserRepo struct {
 }
 
 func (ur *UserRepo) SaveUser(ctx context.Context, id int, stateToken string) (*ent.User, error) {
-	u, err := ur.Client.User.
+	u, err := ur.User.
 		Create().
 		SetID(id).
 		SetStateToken(stateToken).
@@ -35,7 +35,7 @@ func (ur *UserRepo) SaveUser(ctx context.Context, id int, stateToken string) (*e
 			return nil, fmt.Errorf("failed creating user: %w", err)
 		}
 
-		err := ur.Client.User.Update().SetStateToken(stateToken).Where(user.IDEQ(id)).Exec(ctx)
+		err := ur.User.Update().SetStateToken(stateToken).Where(user.IDEQ(id)).Exec(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("failed creating user: %w", err)
 		}
@@ -46,7 +46,7 @@ func (ur *UserRepo) SaveUser(ctx context.Context, id int, stateToken string) (*e
 }
 
 func (ur *UserRepo) GetStateTokenById(ctx context.Context, id int) (*ent.User, error) {
-	u, err := ur.Client.User.Get(ctx, id)
+	u, err := ur.User.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -55,17 +55,17 @@ func (ur *UserRepo) GetStateTokenById(ctx context.Context, id int) (*ent.User, e
 }
 
 func (ur *UserRepo) SaveNotionTokenByStateToken(ctx context.Context, notionToken, stateToken string) (*ent.User, error) {
-	err := ur.Client.User.Update().SetNotionToken(notionToken).Where(user.StateTokenEQ(stateToken)).Exec(ctx)
+	err := ur.User.Update().SetNotionToken(notionToken).Where(user.StateTokenEQ(stateToken)).Exec(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return nil, nil
 }
 
-func (ur *UserRepo) GetNotionTokenByID(ctx context.Context, id int) (*ent.User, error) {
-	u, err := ur.Client.User.Get(ctx, id)
+func (ur *UserRepo) GetNotionTokenByID(ctx context.Context, id int) (string, error) {
+	u, err := ur.User.Get(ctx, id)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	return u, nil
+	return u.NotionToken, nil
 }
