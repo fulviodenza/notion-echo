@@ -10,8 +10,6 @@ import (
 	"os"
 )
 
-const MAX_LEN_MESSAGE = 4096
-
 func Read(filename string, dst *[]byte) error {
 	f, err := os.Open(filename)
 	if err != nil {
