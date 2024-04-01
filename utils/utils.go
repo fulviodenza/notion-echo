@@ -5,6 +5,7 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/base64"
+	"errors"
 	"io"
 	"log"
 	"os"
@@ -39,15 +40,10 @@ func SplitString(s string) []string {
 	return append([]string{group}, SplitString(s[maxGroupLen:])...)
 }
 
-func EncryptString(plainText string) (string, error) {
-	encryptionKey, err := getKeyFromEnv()
-	if err != nil {
-		return "", err
-	}
-	key := []byte(encryptionKey)
+func EncryptString(plainText string, encryptionKey []byte) (string, error) {
 	plaintext := []byte(plainText)
 
-	block, err := aes.NewCipher(key)
+	block, err := aes.NewCipher(encryptionKey)
 	if err != nil {
 		return "", err
 	}
@@ -64,39 +60,26 @@ func EncryptString(plainText string) (string, error) {
 	return base64.URLEncoding.EncodeToString(cipherText), nil
 }
 
-func DecryptString(cryptoText string) (string, error) {
-	encryptionKey, err := getKeyFromEnv()
-	if err != nil {
-		return "", err
-	}
-	key := []byte(encryptionKey)
+func DecryptString(cryptoText string, key []byte) (string, error) {
 	cipherText, err := base64.URLEncoding.DecodeString(cryptoText)
 	if err != nil {
 		return "", err
 	}
+
+	if len(cipherText) < aes.BlockSize {
+		return "", errors.New("ciphertext block size is too short")
+	}
+
+	iv := cipherText[:aes.BlockSize]
+	cipherText = cipherText[aes.BlockSize:]
 
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return "", err
 	}
 
-	if len(cipherText) < aes.BlockSize {
-		return "", err
-	}
-	iv := cipherText[:aes.BlockSize]
-	cipherText = cipherText[aes.BlockSize:]
-
 	stream := cipher.NewCFBDecrypter(block, iv)
 	stream.XORKeyStream(cipherText, cipherText)
 
 	return string(cipherText), nil
-}
-
-func getKeyFromEnv() ([]byte, error) {
-	base64Key := os.Getenv("NOTION_ENCRYPTION_KEY")
-	decodedKey, err := base64.StdEncoding.DecodeString(base64Key)
-	if err != nil {
-		return nil, err
-	}
-	return decodedKey, nil
 }
