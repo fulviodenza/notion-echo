@@ -44,7 +44,11 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
 	if err != nil || tokenEnc == "" {
 		return
 	}
-	token, err := utils.DecryptString(tokenEnc)
+	encKey, err := cc.GetVaultClient().GetKey(os.Getenv("VAULT_PATH"))
+	if err != nil {
+		return
+	}
+	token, err := utils.DecryptString(tokenEnc, encKey)
 	if err != nil {
 		return
 	}

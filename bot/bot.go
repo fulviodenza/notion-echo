@@ -2,6 +2,8 @@ package bot
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
 	"log"
 	"net/http"
@@ -9,10 +11,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
-	"github.com/notion-echo/oauth"
-
+	"github.com/notion-echo/adapters/db"
+	vaultadapter "github.com/notion-echo/adapters/vault"
 	"github.com/notion-echo/bot/types"
 	"github.com/notion-echo/oauth"
 	"github.com/notion-echo/utils"
@@ -29,6 +29,7 @@ type Bot struct {
 	TelegramClient bt.Bot
 	NotionClient   map[string]string
 	UserRepo       db.UserRepoInterface
+	VaultClient    vaultadapter.Vault
 	helpMessage    string
 }
 
@@ -41,6 +42,10 @@ var (
 	notionDatabaseId = os.Getenv(utils.NOTION_DATABASE_ID)
 	telegramToken    = os.Getenv(utils.TELEGRAM_TOKEN)
 	databaseUrl      = os.Getenv(utils.DATABASE_URL)
+	vaultSecretPath  = os.Getenv(utils.VAULT_PATH)
+	vaultAddr        = os.Getenv(utils.VAULT_ADDR)
+	vaultSecretKey   = os.Getenv(utils.VAULT_SECRET_KEY)
+	vaultToken       = os.Getenv(utils.VAULT_TOKEN)
 	port             = os.Getenv(utils.PORT)
 )
 
@@ -52,6 +57,9 @@ func NewBotWithConfig() (*Bot, error) {
 		return nil, err
 	}
 	bot.SetUserRepo(userRepo)
+
+	vaultClient := vaultadapter.SetupVault(vaultAddr, vaultToken)
+	bot.SetVaultClient(vaultClient)
 
 	bot.loadHelpMessage()
 
@@ -114,7 +122,12 @@ func (b *Bot) RunOauth2Endpoint() {
 		}
 
 		state := c.QueryParam("state")
-		notionTokenEnc, err := utils.EncryptString(notionToken)
+		encKey, err := b.GetVaultClient().GetKey(os.Getenv("VAULT_PATH"))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err.Error())
+			return nil
+		}
+		notionTokenEnc, err := utils.EncryptString(notionToken, encKey)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, err.Error())
 			return nil
@@ -199,6 +212,23 @@ func (b *Bot) GetUserRepo() db.UserRepoInterface {
 	return b.UserRepo
 }
 
+func (b *Bot) SetVaultClient(v vaultadapter.Vault) {
+	b.VaultClient = v
+	encryptionKey, err := generateKey()
+	if err != nil {
+		log.Fatalf("Error generating key: %s", err)
+	}
+	encKeyStr := base64.StdEncoding.EncodeToString(encryptionKey)
+
+	_, err = b.WriteOrGetSecret(vaultSecretPath, vaultSecretKey, encKeyStr)
+	if err != nil {
+		log.Fatalf("Error writing secret to Vault: %s", err)
+	}
+}
+func (b *Bot) GetVaultClient() vaultadapter.Vault {
+	return b.VaultClient
+}
+
 func (b *Bot) SetNotionUser(token string) {
 	if b.NotionClient == nil {
 		b.NotionClient = make(map[string]string)
@@ -212,4 +242,32 @@ func (b *Bot) initializeHandlers() map[string]func(ctx context.Context, up *objs
 		utils.COMMAND_REGISTER: NewRegisterCommand(b),
 		utils.COMMAND_START:    NewHelpCommand(b),
 	}
+}
+
+func generateKey() ([]byte, error) {
+	key := make([]byte, 32)
+	if _, err := rand.Read(key); err != nil {
+		return nil, err
+	}
+	return key, nil
+}
+
+func (b *Bot) WriteOrGetSecret(path string, key string, value string) (string, error) {
+	res, err := b.VaultClient.GetKey(path)
+	if err != nil || res == nil {
+		log.Printf("Failed to read secret: %v, assuming it does not exist and creating it.", err)
+
+		data := map[string]interface{}{
+			key: value,
+		}
+		_, err = b.VaultClient.Logical().Write(path, data)
+		if err != nil {
+			return "", fmt.Errorf("failed to write secret to Vault: %v", err)
+		}
+		log.Printf("Secret written to path %s.", path)
+	} else {
+		log.Printf("Secret at path %s already exists, not overwriting.", path)
+	}
+
+	return string(res), nil
 }

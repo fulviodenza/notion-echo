@@ -6,6 +6,7 @@ import (
 	bt "github.com/SakoDroid/telego/v2"
 	"github.com/SakoDroid/telego/v2/objects"
 	"github.com/notion-echo/adapters/db"
+	"github.com/notion-echo/adapters/vault"
 	"github.com/notion-echo/bot/types"
 )
 
@@ -82,3 +83,5 @@ var (
 func (b *MockBot) SetNotionClient(token string, notionToken string) {}
 func (b *MockBot) GetNotionClient(userId string) string             { return "" }
 func (b *MockBot) SetNotionUser(token string)                       {}
+func (b *MockBot) SetVaultClient(v vault.Vault)                     {}
+func (b *MockBot) GetVaultClient() vault.Vault                      { return vault.Vault{Client: nil} }

@@ -7,6 +7,7 @@ import (
 	objs "github.com/SakoDroid/telego/v2/objects"
 	"github.com/jomei/notionapi"
 	"github.com/notion-echo/adapters/db"
+	"github.com/notion-echo/adapters/vault"
 )
 
 type NotionDbRow struct {
@@ -37,4 +38,6 @@ type IBot interface {
 	GetNotionClient(userId string) string
 	SetUserRepo(db db.UserRepoInterface)
 	GetUserRepo() db.UserRepoInterface
+	GetVaultClient() vault.Vault
+	SetVaultClient(v vault.Vault)
 }
