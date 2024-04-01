@@ -163,7 +163,7 @@ func (b *Bot) RunOauth2Endpoint() {
 		// Redirect to Notion's OAuth page.
 		return c.Redirect(http.StatusFound, notionOAuthURL)
 	})
-	address := fmt.Sprintf("localhost:%s", port)
+	address := fmt.Sprintf("0.0.0.0:%s", port)
 	e.Logger.Fatal(e.Start(address))
 }
 
