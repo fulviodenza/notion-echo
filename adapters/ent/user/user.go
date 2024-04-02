@@ -15,6 +15,8 @@ const (
 	FieldStateToken = "state_token"
 	// FieldNotionToken holds the string denoting the notion_token field in the database.
 	FieldNotionToken = "notion_token"
+	// FieldDefaultPage holds the string denoting the default_page field in the database.
+	FieldDefaultPage = "default_page"
 	// Table holds the table name of the user in the database.
 	Table = "users"
 )
@@ -24,6 +26,7 @@ var Columns = []string{
 	FieldID,
 	FieldStateToken,
 	FieldNotionToken,
+	FieldDefaultPage,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -41,6 +44,8 @@ var (
 	DefaultStateToken string
 	// DefaultNotionToken holds the default value on creation for the "notion_token" field.
 	DefaultNotionToken string
+	// DefaultDefaultPage holds the default value on creation for the "default_page" field.
+	DefaultDefaultPage string
 )
 
 // OrderOption defines the ordering options for the User queries.
@@ -59,4 +64,9 @@ func ByStateToken(opts ...sql.OrderTermOption) OrderOption {
 // ByNotionToken orders the results by the notion_token field.
 func ByNotionToken(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldNotionToken, opts...).ToFunc()
+}
+
+// ByDefaultPage orders the results by the default_page field.
+func ByDefaultPage(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDefaultPage, opts...).ToFunc()
 }

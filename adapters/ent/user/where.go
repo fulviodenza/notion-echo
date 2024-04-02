@@ -62,6 +62,11 @@ func NotionToken(v string) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldNotionToken, v))
 }
 
+// DefaultPage applies equality check predicate on the "default_page" field. It's identical to DefaultPageEQ.
+func DefaultPage(v string) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldDefaultPage, v))
+}
+
 // StateTokenEQ applies the EQ predicate on the "state_token" field.
 func StateTokenEQ(v string) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldStateToken, v))
@@ -190,6 +195,71 @@ func NotionTokenEqualFold(v string) predicate.User {
 // NotionTokenContainsFold applies the ContainsFold predicate on the "notion_token" field.
 func NotionTokenContainsFold(v string) predicate.User {
 	return predicate.User(sql.FieldContainsFold(FieldNotionToken, v))
+}
+
+// DefaultPageEQ applies the EQ predicate on the "default_page" field.
+func DefaultPageEQ(v string) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldDefaultPage, v))
+}
+
+// DefaultPageNEQ applies the NEQ predicate on the "default_page" field.
+func DefaultPageNEQ(v string) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldDefaultPage, v))
+}
+
+// DefaultPageIn applies the In predicate on the "default_page" field.
+func DefaultPageIn(vs ...string) predicate.User {
+	return predicate.User(sql.FieldIn(FieldDefaultPage, vs...))
+}
+
+// DefaultPageNotIn applies the NotIn predicate on the "default_page" field.
+func DefaultPageNotIn(vs ...string) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldDefaultPage, vs...))
+}
+
+// DefaultPageGT applies the GT predicate on the "default_page" field.
+func DefaultPageGT(v string) predicate.User {
+	return predicate.User(sql.FieldGT(FieldDefaultPage, v))
+}
+
+// DefaultPageGTE applies the GTE predicate on the "default_page" field.
+func DefaultPageGTE(v string) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldDefaultPage, v))
+}
+
+// DefaultPageLT applies the LT predicate on the "default_page" field.
+func DefaultPageLT(v string) predicate.User {
+	return predicate.User(sql.FieldLT(FieldDefaultPage, v))
+}
+
+// DefaultPageLTE applies the LTE predicate on the "default_page" field.
+func DefaultPageLTE(v string) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldDefaultPage, v))
+}
+
+// DefaultPageContains applies the Contains predicate on the "default_page" field.
+func DefaultPageContains(v string) predicate.User {
+	return predicate.User(sql.FieldContains(FieldDefaultPage, v))
+}
+
+// DefaultPageHasPrefix applies the HasPrefix predicate on the "default_page" field.
+func DefaultPageHasPrefix(v string) predicate.User {
+	return predicate.User(sql.FieldHasPrefix(FieldDefaultPage, v))
+}
+
+// DefaultPageHasSuffix applies the HasSuffix predicate on the "default_page" field.
+func DefaultPageHasSuffix(v string) predicate.User {
+	return predicate.User(sql.FieldHasSuffix(FieldDefaultPage, v))
+}
+
+// DefaultPageEqualFold applies the EqualFold predicate on the "default_page" field.
+func DefaultPageEqualFold(v string) predicate.User {
+	return predicate.User(sql.FieldEqualFold(FieldDefaultPage, v))
+}
+
+// DefaultPageContainsFold applies the ContainsFold predicate on the "default_page" field.
+func DefaultPageContainsFold(v string) predicate.User {
+	return predicate.User(sql.FieldContainsFold(FieldDefaultPage, v))
 }
 
 // And groups predicates with the AND operator between them.

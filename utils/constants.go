@@ -21,10 +21,11 @@ const (
 )
 
 const (
-	COMMAND_NOTE     = "/note"
-	COMMAND_HELP     = "/help"
-	COMMAND_REGISTER = "/register"
-	COMMAND_START    = "/start"
+	COMMAND_NOTE         = "/note"
+	COMMAND_HELP         = "/help"
+	COMMAND_REGISTER     = "/register"
+	COMMAND_START        = "/start"
+	COMMAND_DEFAULT_PAGE = "/defaultpage"
 )
 
 const (

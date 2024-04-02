@@ -47,6 +47,20 @@ func (uc *UserCreate) SetNillableNotionToken(s *string) *UserCreate {
 	return uc
 }
 
+// SetDefaultPage sets the "default_page" field.
+func (uc *UserCreate) SetDefaultPage(s string) *UserCreate {
+	uc.mutation.SetDefaultPage(s)
+	return uc
+}
+
+// SetNillableDefaultPage sets the "default_page" field if the given value is not nil.
+func (uc *UserCreate) SetNillableDefaultPage(s *string) *UserCreate {
+	if s != nil {
+		uc.SetDefaultPage(*s)
+	}
+	return uc
+}
+
 // SetID sets the "id" field.
 func (uc *UserCreate) SetID(i int) *UserCreate {
 	uc.mutation.SetID(i)
@@ -96,6 +110,10 @@ func (uc *UserCreate) defaults() {
 		v := user.DefaultNotionToken
 		uc.mutation.SetNotionToken(v)
 	}
+	if _, ok := uc.mutation.DefaultPage(); !ok {
+		v := user.DefaultDefaultPage
+		uc.mutation.SetDefaultPage(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -105,6 +123,9 @@ func (uc *UserCreate) check() error {
 	}
 	if _, ok := uc.mutation.NotionToken(); !ok {
 		return &ValidationError{Name: "notion_token", err: errors.New(`ent: missing required field "User.notion_token"`)}
+	}
+	if _, ok := uc.mutation.DefaultPage(); !ok {
+		return &ValidationError{Name: "default_page", err: errors.New(`ent: missing required field "User.default_page"`)}
 	}
 	return nil
 }
@@ -145,6 +166,10 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	if value, ok := uc.mutation.NotionToken(); ok {
 		_spec.SetField(user.FieldNotionToken, field.TypeString, value)
 		_node.NotionToken = value
+	}
+	if value, ok := uc.mutation.DefaultPage(); ok {
+		_spec.SetField(user.FieldDefaultPage, field.TypeString, value)
+		_node.DefaultPage = value
 	}
 	return _node, _spec
 }

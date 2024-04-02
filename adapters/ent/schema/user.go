@@ -18,6 +18,8 @@ func (User) Fields() []ent.Field {
 			Default(""),
 		field.String("notion_token").
 			Default(""),
+		field.String("default_page").
+			Default(""),
 	}
 }
 
