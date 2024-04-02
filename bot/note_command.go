@@ -10,15 +10,14 @@ import (
 	"github.com/jomei/notionapi"
 	"github.com/notion-echo/adapters/notion"
 	"github.com/notion-echo/bot/types"
+	"github.com/notion-echo/errors"
 	"github.com/notion-echo/utils"
 )
 
 var _ types.ICommand = (*NoteCommand)(nil)
 
 const (
-	NOTE_SAVED    = "note saved!"
-	SaveNoteErr   = "error saving note!"
-	SearchPageErr = "writing page not found!"
+	NOTE_SAVED = "note saved!"
 )
 
 var BotEmoji = notionapi.Emoji("🤖")
@@ -38,22 +37,38 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
 	if cc == nil || cc.IBot == nil {
 		return
 	}
+
+	userRepo := cc.GetUserRepo()
+	id := update.Message.Chat.Id
+
 	blocks := &notionapi.AppendBlockChildrenRequest{}
 
-	tokenEnc, err := cc.GetUserRepo().GetNotionTokenByID(ctx, update.Message.Chat.Id)
+	tokenEnc, err := userRepo.GetNotionTokenByID(ctx, id)
 	if err != nil || tokenEnc == "" {
 		return
 	}
 	encKey, err := cc.GetVaultClient().GetKey(os.Getenv("VAULT_PATH"))
 	if err != nil {
+		log.Println(err)
 		return
 	}
 	token, err := utils.DecryptString(tokenEnc, encKey)
 	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defaultPage, err := userRepo.GetDefaultPage(ctx, id)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	if defaultPage == "" {
+		cc.SendMessage("first select an authorized page from your Notion!", update, false)
 		return
 	}
 	notionClient := notion.NewNotionService(notionapi.NewClient(notionapi.Token(token)))
-	page, err := notionClient.SearchPage(ctx, "Buffer")
+	page, err := notionClient.SearchPage(ctx, defaultPage)
 	if err != nil {
 		return
 	}
@@ -72,7 +87,7 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
 	_, err = notionClient.Block().AppendChildren(ctx, notionapi.BlockID(page.ID), blocks)
 	if err != nil {
 		log.Println(err)
-		cc.SendMessage(SaveNoteErr, update, false)
+		cc.SendMessage(errors.ErrSaveNote.Error(), update, false)
 		return
 	}
 

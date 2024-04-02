@@ -15,6 +15,8 @@ type UserRepoInterface interface {
 	GetStateTokenById(ctx context.Context, id int) (*ent.User, error)
 	SaveNotionTokenByStateToken(ctx context.Context, notionToken, stateToken string) (*ent.User, error)
 	GetNotionTokenByID(ctx context.Context, id int) (string, error)
+	SetDefaultPage(ctx context.Context, id int, page string) error
+	GetDefaultPage(ctx context.Context, id int) (string, error)
 }
 
 var _ UserRepoInterface = (*UserRepo)(nil)
@@ -68,4 +70,20 @@ func (ur *UserRepo) GetNotionTokenByID(ctx context.Context, id int) (string, err
 		return "", err
 	}
 	return u.NotionToken, nil
+}
+
+func (ur *UserRepo) SetDefaultPage(ctx context.Context, id int, page string) error {
+	err := ur.User.Update().SetDefaultPage(page).Where(user.IDEQ(id)).Exec(ctx)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (ur *UserRepo) GetDefaultPage(ctx context.Context, id int) (string, error) {
+	u, err := ur.User.Get(ctx, id)
+	if err != nil {
+		return "", err
+	}
+	return u.DefaultPage, nil
 }

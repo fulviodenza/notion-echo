@@ -55,6 +55,20 @@ func (uu *UserUpdate) SetNillableNotionToken(s *string) *UserUpdate {
 	return uu
 }
 
+// SetDefaultPage sets the "default_page" field.
+func (uu *UserUpdate) SetDefaultPage(s string) *UserUpdate {
+	uu.mutation.SetDefaultPage(s)
+	return uu
+}
+
+// SetNillableDefaultPage sets the "default_page" field if the given value is not nil.
+func (uu *UserUpdate) SetNillableDefaultPage(s *string) *UserUpdate {
+	if s != nil {
+		uu.SetDefaultPage(*s)
+	}
+	return uu
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uu *UserUpdate) Mutation() *UserMutation {
 	return uu.mutation
@@ -102,6 +116,9 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := uu.mutation.NotionToken(); ok {
 		_spec.SetField(user.FieldNotionToken, field.TypeString, value)
 	}
+	if value, ok := uu.mutation.DefaultPage(); ok {
+		_spec.SetField(user.FieldDefaultPage, field.TypeString, value)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, uu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{user.Label}
@@ -146,6 +163,20 @@ func (uuo *UserUpdateOne) SetNotionToken(s string) *UserUpdateOne {
 func (uuo *UserUpdateOne) SetNillableNotionToken(s *string) *UserUpdateOne {
 	if s != nil {
 		uuo.SetNotionToken(*s)
+	}
+	return uuo
+}
+
+// SetDefaultPage sets the "default_page" field.
+func (uuo *UserUpdateOne) SetDefaultPage(s string) *UserUpdateOne {
+	uuo.mutation.SetDefaultPage(s)
+	return uuo
+}
+
+// SetNillableDefaultPage sets the "default_page" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillableDefaultPage(s *string) *UserUpdateOne {
+	if s != nil {
+		uuo.SetDefaultPage(*s)
 	}
 	return uuo
 }
@@ -226,6 +257,9 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 	}
 	if value, ok := uuo.mutation.NotionToken(); ok {
 		_spec.SetField(user.FieldNotionToken, field.TypeString, value)
+	}
+	if value, ok := uuo.mutation.DefaultPage(); ok {
+		_spec.SetField(user.FieldDefaultPage, field.TypeString, value)
 	}
 	_node = &User{config: uuo.config}
 	_spec.Assign = _node.assignValues

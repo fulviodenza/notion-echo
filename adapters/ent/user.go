@@ -19,7 +19,9 @@ type User struct {
 	// StateToken holds the value of the "state_token" field.
 	StateToken string `json:"state_token,omitempty"`
 	// NotionToken holds the value of the "notion_token" field.
-	NotionToken  string `json:"notion_token,omitempty"`
+	NotionToken string `json:"notion_token,omitempty"`
+	// DefaultPage holds the value of the "default_page" field.
+	DefaultPage  string `json:"default_page,omitempty"`
 	selectValues sql.SelectValues
 }
 
@@ -30,7 +32,7 @@ func (*User) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case user.FieldID:
 			values[i] = new(sql.NullInt64)
-		case user.FieldStateToken, user.FieldNotionToken:
+		case user.FieldStateToken, user.FieldNotionToken, user.FieldDefaultPage:
 			values[i] = new(sql.NullString)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -64,6 +66,12 @@ func (u *User) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field notion_token", values[i])
 			} else if value.Valid {
 				u.NotionToken = value.String
+			}
+		case user.FieldDefaultPage:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field default_page", values[i])
+			} else if value.Valid {
+				u.DefaultPage = value.String
 			}
 		default:
 			u.selectValues.Set(columns[i], values[i])
@@ -106,6 +114,9 @@ func (u *User) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("notion_token=")
 	builder.WriteString(u.NotionToken)
+	builder.WriteString(", ")
+	builder.WriteString("default_page=")
+	builder.WriteString(u.DefaultPage)
 	builder.WriteByte(')')
 	return builder.String()
 }

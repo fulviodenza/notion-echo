@@ -34,6 +34,7 @@ type UserMutation struct {
 	id            *int
 	state_token   *string
 	notion_token  *string
+	default_page  *string
 	clearedFields map[string]struct{}
 	done          bool
 	oldValue      func(context.Context) (*User, error)
@@ -216,6 +217,42 @@ func (m *UserMutation) ResetNotionToken() {
 	m.notion_token = nil
 }
 
+// SetDefaultPage sets the "default_page" field.
+func (m *UserMutation) SetDefaultPage(s string) {
+	m.default_page = &s
+}
+
+// DefaultPage returns the value of the "default_page" field in the mutation.
+func (m *UserMutation) DefaultPage() (r string, exists bool) {
+	v := m.default_page
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDefaultPage returns the old "default_page" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldDefaultPage(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDefaultPage is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDefaultPage requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDefaultPage: %w", err)
+	}
+	return oldValue.DefaultPage, nil
+}
+
+// ResetDefaultPage resets all changes to the "default_page" field.
+func (m *UserMutation) ResetDefaultPage() {
+	m.default_page = nil
+}
+
 // Where appends a list predicates to the UserMutation builder.
 func (m *UserMutation) Where(ps ...predicate.User) {
 	m.predicates = append(m.predicates, ps...)
@@ -250,12 +287,15 @@ func (m *UserMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserMutation) Fields() []string {
-	fields := make([]string, 0, 2)
+	fields := make([]string, 0, 3)
 	if m.state_token != nil {
 		fields = append(fields, user.FieldStateToken)
 	}
 	if m.notion_token != nil {
 		fields = append(fields, user.FieldNotionToken)
+	}
+	if m.default_page != nil {
+		fields = append(fields, user.FieldDefaultPage)
 	}
 	return fields
 }
@@ -269,6 +309,8 @@ func (m *UserMutation) Field(name string) (ent.Value, bool) {
 		return m.StateToken()
 	case user.FieldNotionToken:
 		return m.NotionToken()
+	case user.FieldDefaultPage:
+		return m.DefaultPage()
 	}
 	return nil, false
 }
@@ -282,6 +324,8 @@ func (m *UserMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldStateToken(ctx)
 	case user.FieldNotionToken:
 		return m.OldNotionToken(ctx)
+	case user.FieldDefaultPage:
+		return m.OldDefaultPage(ctx)
 	}
 	return nil, fmt.Errorf("unknown User field %s", name)
 }
@@ -304,6 +348,13 @@ func (m *UserMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetNotionToken(v)
+		return nil
+	case user.FieldDefaultPage:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDefaultPage(v)
 		return nil
 	}
 	return fmt.Errorf("unknown User field %s", name)
@@ -359,6 +410,9 @@ func (m *UserMutation) ResetField(name string) error {
 		return nil
 	case user.FieldNotionToken:
 		m.ResetNotionToken()
+		return nil
+	case user.FieldDefaultPage:
+		m.ResetDefaultPage()
 		return nil
 	}
 	return fmt.Errorf("unknown User field %s", name)

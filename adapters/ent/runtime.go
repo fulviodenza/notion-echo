@@ -21,4 +21,8 @@ func init() {
 	userDescNotionToken := userFields[2].Descriptor()
 	// user.DefaultNotionToken holds the default value on creation for the notion_token field.
 	user.DefaultNotionToken = userDescNotionToken.Default.(string)
+	// userDescDefaultPage is the schema descriptor for default_page field.
+	userDescDefaultPage := userFields[3].Descriptor()
+	// user.DefaultDefaultPage holds the default value on creation for the default_page field.
+	user.DefaultDefaultPage = userDescDefaultPage.Default.(string)
 }
