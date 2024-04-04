@@ -20,10 +20,11 @@ Say goodbye to switching apps or losing thoughts in the shuffle—Notion-Echo Bo
 
 ### Commands
 
-- `/help` - Displays this help message.
-- `/register` - Register your Notion notebook in the bot.
-- `/note [text]` - Write the text of the note on Notion.
-- `/defaultpage [page_name]` - Sets the default Notion page for your notes. Ensure this is an authorized page during registration.
+- `/help` - Displays this help message;
+- `/register` - Register your Notion notebook in the bot;
+- `/note [text]` - Write the text of the note on Notion;
+- `/defaultpage [page_name]` - Sets the default Notion page for your notes. Ensure this is an authorized page during registration;
+- `/getdefaultpage` - Get default page for your user.
 
 ## Why Use notion-echo Bot?
 

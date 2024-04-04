@@ -5,6 +5,7 @@ Here’s how to get started:
 - `/register` - Securely link me with your Notion account to begin. I'll guide you through this simple process.
 - `/defaultpage page_name` - Set up a default Notion page where I'll neatly organize your notes.
 - `/note your_note` - Ready to note something down? Just send me a message starting with /note followed by what you'd like to remember. It's as simple as texting!
+- `/getdefaultpage` - Get default page for your user.
 
 Need a bit more guidance? Type /help anytime to see what I can do for you.
 
