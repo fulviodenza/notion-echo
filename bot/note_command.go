@@ -64,7 +64,7 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
 		return
 	}
 	if defaultPage == "" {
-		cc.SendMessage("first select an authorized page from your Notion!", update, false)
+		cc.SendMessage("first choose a default page between the authorized pages from your Notion!", update, false)
 		return
 	}
 	notionClient := notion.NewNotionService(notionapi.NewClient(notionapi.Token(token)))
