@@ -138,7 +138,7 @@ func (b *Bot) RunOauth2Endpoint() {
 			return nil
 		}
 		b.SetNotionClient(state, notionToken)
-		c.JSON(http.StatusOK, "ok")
+		c.JSON(http.StatusOK, "your page has ben set, you can now close this page")
 		return nil
 	})
 	address := fmt.Sprintf("0.0.0.0:%s", port)
