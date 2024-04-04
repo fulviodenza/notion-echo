@@ -1,4 +1,4 @@
-# notion-echo Bot
+# notion-echo bot
 
 Welcome to the notion-echo Bot, your seamless bridge between Telegram and Notion! Designed with productivity in mind, this bot effortlessly creates callout blocks in a Notion page of your choosing, enabling you to capture ideas, notes, and tasks without ever leaving your Telegram chat and allowing you to write notes on your Notion as you were writing to a friend on telegram. 
 
