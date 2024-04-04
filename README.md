@@ -15,8 +15,8 @@ Say goodbye to switching apps or losing thoughts in the shuffle—Notion-Echo Bo
 
 1. **Install the Bot:** Search for `notion_echo_bot` in Telegram or click [here](https://t.me/notion_echo_bot) to start.
 2. **/register:** Follow the bot's prompts to register your Notion notebook.
-3. **/defaultpage [page_name]:** Set up your default Notion page where all notes will be stored.
-4. **/note [your_note]:** Begin noting down your thoughts and tasks directly into Notion.
+3. **/defaultpage page_name:** Set up your default Notion page where all notes will be stored.
+4. **/note your_note:** Begin noting down your thoughts and tasks directly into Notion.
 
 ### Commands
 
