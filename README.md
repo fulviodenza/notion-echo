@@ -42,8 +42,6 @@ For more information and updates, follow us on [GitHub](https://github.com/fulvi
 We welcome contributions of all kinds from the community. If you're interested in helping improve notion-echo Bot.
 
 ## Known issues
-- allow more words pages to be set as default page (now only single worded pages are allowed)
 - use buttons to create a flow
 - transcribe markdown
-- if i create a new line in the `/note` command that new line shall be ignored (?)
 - allow deauthorize

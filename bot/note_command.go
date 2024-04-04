@@ -2,16 +2,13 @@ package bot
 
 import (
 	"context"
-	"log"
 	"os"
 	"strings"
 
 	"github.com/SakoDroid/telego/v2/objects"
 	"github.com/jomei/notionapi"
-	"github.com/notion-echo/adapters/notion"
 	"github.com/notion-echo/bot/types"
 	"github.com/notion-echo/errors"
-	"github.com/notion-echo/utils"
 )
 
 var _ types.ICommand = (*NoteCommand)(nil)
@@ -38,55 +35,38 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
 		return
 	}
 
-	userRepo := cc.GetUserRepo()
 	id := update.Message.Chat.Id
 
 	blocks := &notionapi.AppendBlockChildrenRequest{}
+	noteText := strings.Replace(update.Message.Text, "/note", "", 1)
+	blocks.Children = append(blocks.Children, buildCalloutBlock(noteText))
 
-	tokenEnc, err := userRepo.GetNotionTokenByID(ctx, id)
-	if err != nil || tokenEnc == "" {
-		return
-	}
 	encKey, err := cc.GetVaultClient().GetKey(os.Getenv("VAULT_PATH"))
 	if err != nil {
-		log.Println(err)
 		return
 	}
-	token, err := utils.DecryptString(tokenEnc, encKey)
+	notionClient, err := buildNotionClient(ctx, cc.GetUserRepo(), id, encKey)
 	if err != nil {
-		log.Println(err)
+		cc.SendMessage(errors.ErrNotRegistered.Error(), update, false)
 		return
 	}
-
-	defaultPage, err := userRepo.GetDefaultPage(ctx, id)
+	defaultPage, err := cc.GetUserRepo().GetDefaultPage(ctx, id)
 	if err != nil {
-		log.Println(err)
+		cc.SendMessage(errors.ErrPageNotFound.Error(), update, false)
 		return
 	}
 	if defaultPage == "" {
 		cc.SendMessage("first choose a default page between the authorized pages from your Notion!", update, false)
 		return
 	}
-	notionClient := notion.NewNotionService(notionapi.NewClient(notionapi.Token(token)))
 	page, err := notionClient.SearchPage(ctx, defaultPage)
 	if err != nil {
+		cc.SendMessage(errors.ErrPageNotFound.Error(), update, false)
 		return
 	}
-
-	paths, err := downloadAndUploadImage(cc.IBot, update.Message.Photo)
-	if err != nil {
-		return
-	}
-	for _, fp := range paths {
-		blocks.Children = append(blocks.Children, buildImageBlock(fp))
-	}
-
-	noteText := strings.Replace(update.Message.Text, "/note", "", 1)
-	blocks.Children = append(blocks.Children, buildCalloutBlock(noteText))
 
 	_, err = notionClient.Block().AppendChildren(ctx, notionapi.BlockID(page.ID), blocks)
 	if err != nil {
-		log.Println(err)
 		cc.SendMessage(errors.ErrSaveNote.Error(), update, false)
 		return
 	}

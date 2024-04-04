@@ -4,11 +4,13 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 
 	"github.com/SakoDroid/telego/v2/objects"
 	"github.com/notion-echo/bot/types"
 	"github.com/notion-echo/errors"
+	"github.com/notion-echo/utils"
 )
 
 var _ types.ICommand = (*DefaultPageCommand)(nil)
@@ -28,13 +30,25 @@ func (dc *DefaultPageCommand) Execute(ctx context.Context, update *objects.Updat
 	if dc == nil || dc.IBot == nil {
 		return
 	}
-	args := strings.Split(update.Message.Text, " ")
-	if len(args) != 2 {
-		dc.SendMessage(errors.ErrNotEnoughArguments.Error(), update, false)
+
+	encKey, err := dc.GetVaultClient().GetKey(os.Getenv("VAULT_PATH"))
+	if err != nil {
+		dc.SendMessage(errors.ErrNotRegistered.Error(), update, false)
 		return
 	}
-	selectedPage := args[1]
-	err := dc.GetUserRepo().SetDefaultPage(ctx, update.Message.Chat.Id, selectedPage)
+	notionClient, err := buildNotionClient(ctx, dc.GetUserRepo(), update.Message.Chat.Id, encKey)
+	if err != nil {
+		dc.SendMessage(errors.ErrSetDefaultPage.Error(), update, false)
+		return
+	}
+
+	selectedPage := strings.Replace(update.Message.Text, utils.COMMAND_DEFAULT_PAGE+" ", "", 1)
+	p, err := notionClient.SearchPage(ctx, selectedPage)
+	if err != nil || p.ID == "" || p.Object == "" {
+		dc.SendMessage(errors.ErrPageNotFound.Error(), update, false)
+		return
+	}
+	err = dc.GetUserRepo().SetDefaultPage(ctx, update.Message.Chat.Id, selectedPage)
 	if err != nil {
 		log.Println(err)
 		dc.SendMessage(errors.ErrSetDefaultPage.Error(), update, false)

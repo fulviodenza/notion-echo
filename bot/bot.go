@@ -11,7 +11,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/jomei/notionapi"
 	"github.com/notion-echo/adapters/db"
+	"github.com/notion-echo/adapters/notion"
 	vaultadapter "github.com/notion-echo/adapters/vault"
 	"github.com/notion-echo/bot/types"
 	"github.com/notion-echo/oauth"
@@ -271,4 +273,17 @@ func (b *Bot) WriteOrGetSecret(path string, key string, value string) (string, e
 	}
 
 	return string(res), nil
+}
+
+func buildNotionClient(ctx context.Context, userRepo db.UserRepoInterface, id int, encKey []byte) (notion.Interface, error) {
+	tokenEnc, err := userRepo.GetNotionTokenByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	token, err := utils.DecryptString(tokenEnc, encKey)
+	if err != nil {
+		return nil, err
+	}
+	return notion.NewNotionService(notionapi.NewClient(notionapi.Token(token))), nil
 }
