@@ -23,7 +23,7 @@ Say goodbye to switching apps or losing thoughts in the shuffle—Notion-Echo Bo
 - `/help` - Displays this help message.
 - `/register` - Register your Notion notebook in the bot.
 - `/note [text]` - Write the text of the note on Notion.
-- `/defaultpage [page_id]` - Sets the default Notion page for your notes. Ensure this is an authorized page during registration.
+- `/defaultpage [page_name]` - Sets the default Notion page for your notes. Ensure this is an authorized page during registration.
 
 ## Why Use notion-echo Bot?
 
