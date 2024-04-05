@@ -95,6 +95,18 @@ func (b *Bot) Start(ctx context.Context) {
 		c := c
 		f := f
 		b.TelegramClient.AddHandler(c, func(u *objs.Update) {
+			if strings.Contains(c, "start") || strings.Contains(c, "hi") {
+				kb := b.TelegramClient.CreateKeyboard(false, false, false, false, "type ...")
+
+				kb.AddButton("/help", 1)
+				kb.AddButton("/register", 1)
+				kb.AddButton("/getdefaultpage", 2)
+
+				_, err := b.TelegramClient.AdvancedMode().ASendMessage(u.Message.Chat.Id, "Welcome to notion-echo bot!", "", u.Message.MessageId, 0, false, false, nil, false, false, kb)
+				if err != nil {
+					fmt.Println(err)
+				}
+			}
 			if strings.Contains(u.Message.Text, c) || strings.Contains(u.Message.Caption, c) {
 				f(ctx, u)
 			}
