@@ -95,7 +95,7 @@ func (b *Bot) Start(ctx context.Context) {
 		c := c
 		f := f
 		b.TelegramClient.AddHandler(c, func(u *objs.Update) {
-			if strings.Contains(c, "start") || strings.Contains(c, "hi") {
+			if strings.Contains(c, "/start") {
 				kb := b.TelegramClient.CreateKeyboard(false, false, false, false, "type ...")
 
 				kb.AddButton("/help", 1)
