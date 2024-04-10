@@ -46,4 +46,4 @@ We welcome contributions of all kinds from the community. If you're interested i
 - use buttons to create a flow
 - transcribe markdown
 - allow deauthorize
-- currently bot does not allow image upload, for more informations look at: https://github.com/SakoDroid/telego/issues/19
+- currently, the bot does not allow image upload, for more informations look at: https://github.com/SakoDroid/telego/issues/19
