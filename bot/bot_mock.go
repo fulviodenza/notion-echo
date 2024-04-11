@@ -6,6 +6,7 @@ import (
 	bt "github.com/SakoDroid/telego/v2"
 	"github.com/SakoDroid/telego/v2/objects"
 	"github.com/notion-echo/adapters/db"
+	"github.com/notion-echo/adapters/ent"
 	"github.com/notion-echo/adapters/vault"
 	"github.com/notion-echo/bot/types"
 )
@@ -13,12 +14,15 @@ import (
 var _ types.IBot = (*MockBot)(nil)
 
 type MockBot struct {
-	Resp string
-	Err  error
+	Resp    string
+	Err     error
+	usersDb map[int]*ent.User
 }
 
-func NewMockBot() *MockBot {
-	return &MockBot{}
+func NewMockBot(usersDb map[int]*ent.User) *MockBot {
+	return &MockBot{
+		usersDb: usersDb,
+	}
 }
 
 func (b *MockBot) SendMessage(msg string, up *objects.Update, formatMarkdown bool) error {
@@ -45,7 +49,7 @@ func (b *MockBot) SetUserRepo(db db.UserRepoInterface) {
 
 }
 func (b *MockBot) GetUserRepo() db.UserRepoInterface {
-	return nil
+	return db.NewUserRepoMock(b.usersDb)
 }
 
 var (
@@ -68,11 +72,16 @@ var (
 			up.Message.Text = msg
 		}
 	}
+	withId = func(id int) func(*objects.Update) {
+		return func(up *objects.Update) {
+			up.Message.Chat.Id = id
+		}
+	}
 )
 
 var (
 	bot = func(opts ...func(*MockBot)) *MockBot {
-		bot := NewMockBot()
+		bot := NewMockBot(map[int]*ent.User{})
 		for _, o := range opts {
 			o(bot)
 		}

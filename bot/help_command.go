@@ -14,7 +14,7 @@ type HelpCommand struct {
 	types.IBot
 }
 
-func NewHelpCommand(bot *Bot) types.Command {
+func NewHelpCommand(bot types.IBot) types.Command {
 	hc := HelpCommand{
 		IBot: bot,
 	}

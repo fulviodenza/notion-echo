@@ -23,7 +23,7 @@ type NoteCommand struct {
 	types.IBot
 }
 
-func NewNoteCommand(bot *Bot) types.Command {
+func NewNoteCommand(bot types.IBot) types.Command {
 	hc := NoteCommand{
 		IBot: bot,
 	}

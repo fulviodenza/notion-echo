@@ -15,7 +15,7 @@ type GetDefaultPageCommand struct {
 	types.IBot
 }
 
-func NewGetDefaultPageCommand(bot *Bot) types.Command {
+func NewGetDefaultPageCommand(bot types.IBot) types.Command {
 	hc := GetDefaultPageCommand{
 		IBot: bot,
 	}
