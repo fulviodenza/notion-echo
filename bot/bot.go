@@ -255,6 +255,7 @@ func (b *Bot) initializeHandlers() map[string]func(ctx context.Context, up *objs
 		utils.COMMAND_START:            NewHelpCommand(b),
 		utils.COMMAND_DEFAULT_PAGE:     NewDefaultPageCommand(b),
 		utils.COMMAND_GET_DEFAULT_PAGE: NewGetDefaultPageCommand(b),
+		utils.COMMAND_DEAUTHORIZE:      NewDeauthorizeCommand(b),
 	}
 }
 

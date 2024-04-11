@@ -17,6 +17,7 @@ type UserRepoInterface interface {
 	GetNotionTokenByID(ctx context.Context, id int) (string, error)
 	SetDefaultPage(ctx context.Context, id int, page string) error
 	GetDefaultPage(ctx context.Context, id int) (string, error)
+	DeleteUser(ctx context.Context, id int) error
 }
 
 var _ UserRepoInterface = (*UserRepo)(nil)
@@ -86,4 +87,9 @@ func (ur *UserRepo) GetDefaultPage(ctx context.Context, id int) (string, error) 
 		return "", err
 	}
 	return u.DefaultPage, nil
+}
+
+func (ur *UserRepo) DeleteUser(ctx context.Context, id int) error {
+	_, err := ur.User.Delete().Where(user.IDEQ(id)).Exec(ctx)
+	return err
 }
