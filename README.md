@@ -25,6 +25,7 @@ Say goodbye to switching apps or losing thoughts in the shuffle—Notion-Echo Bo
 - `/note [text]` - Write the text of the note on Notion;
 - `/defaultpage [page_name]` - Sets the default Notion page for your notes. Ensure this is an authorized page during registration;
 - `/getdefaultpage` - Get default page for your user.
+- `/deauthorize` - I will forget you
 
 ## Why Use notion-echo Bot?
 
@@ -45,5 +46,4 @@ We welcome contributions of all kinds from the community. If you're interested i
 ## Known issues
 - use buttons to create a flow
 - transcribe markdown
-- allow deauthorize
 - currently, the bot does not allow image upload, for more informations look at: https://github.com/SakoDroid/telego/issues/19
