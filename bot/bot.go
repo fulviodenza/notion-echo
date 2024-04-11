@@ -40,15 +40,13 @@ type Bot struct {
 var _ types.IBot = (*Bot)(nil)
 
 var (
-	notionToken      = os.Getenv(utils.NOTION_TOKEN)
-	notionDatabaseId = os.Getenv(utils.NOTION_DATABASE_ID)
-	telegramToken    = os.Getenv(utils.TELEGRAM_TOKEN)
-	databaseUrl      = os.Getenv(utils.DATABASE_URL)
-	vaultSecretPath  = os.Getenv(utils.VAULT_PATH)
-	vaultAddr        = os.Getenv(utils.VAULT_ADDR)
-	vaultSecretKey   = os.Getenv(utils.VAULT_SECRET_KEY)
-	vaultToken       = os.Getenv(utils.VAULT_TOKEN)
-	port             = os.Getenv(utils.PORT)
+	telegramToken   = os.Getenv(utils.TELEGRAM_TOKEN)
+	databaseUrl     = os.Getenv(utils.DATABASE_URL)
+	vaultSecretPath = os.Getenv(utils.VAULT_PATH)
+	vaultAddr       = os.Getenv(utils.VAULT_ADDR)
+	vaultSecretKey  = os.Getenv(utils.VAULT_SECRET_KEY)
+	vaultToken      = os.Getenv(utils.VAULT_TOKEN)
+	port            = os.Getenv(utils.PORT)
 )
 
 func NewBotWithConfig() (*Bot, error) {

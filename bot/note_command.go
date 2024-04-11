@@ -74,35 +74,39 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
 	cc.SendMessage(NOTE_SAVED, update, false)
 }
 
-func downloadAndUploadImage(bot types.IBot, ps []objects.PhotoSize) ([]string, error) {
-	var filePaths []string = make([]string, len(ps))
-	for _, p := range ps {
-		out, err := os.Create(p.FileId)
-		if err != nil {
-			continue
-		}
-		file, err := bot.GetTelegramClient().GetFile(p.FileId, true, out)
-		if err != nil {
-			continue
-		}
-		filePaths = append(filePaths, file.FilePath)
-	}
-	return filePaths, nil
-}
+// to enable note images we need to wait for the merge of the pr on SakoDroid telego
+// func downloadAndUploadImage(bot types.IBot, ps []objects.PhotoSize) ([]string, error) {
+// 	var filePaths []string = make([]string, len(ps))
+// 	for _, p := range ps {
+// 		out, err := os.Create(p.FileId)
+// 		if err != nil {
+// 			continue
+// 		}
+// 		file, err := bot.GetTelegramClient().GetFile(p.FileId, true, out)
+// 		if err != nil {
+// 			continue
+// 		}
+// 		filePaths = append(filePaths, file.FilePath)
+// 	}
+// 	return filePaths, nil
+// }
 
-func buildImageBlock(path string) *notionapi.ImageBlock {
-	image := &notionapi.ImageBlock{
-		BasicBlock: notionapi.BasicBlock{
-			Type:   notionapi.BlockTypeImage,
-			Object: "block",
-		},
-		Image: notionapi.Image{
-			Type: "external",
-			File: &notionapi.FileObject{
-				URL: path,
-			},
-		},
-	}
+// func buildImageBlock(path string) *notionapi.ImageBlock {
+// 	image := &notionapi.ImageBlock{
+// 		BasicBlock: notionapi.BasicBlock{
+// 			Type:   notionapi.BlockTypeImage,
+// 			Object: "block",
+// 		},
+// 		Image: notionapi.Image{
+// 			Type: "external",
+// 			File: &notionapi.FileObject{
+// 				URL: path,
+// 			},
+// 		},
+// 	}
+
+// 	return image
+// }
 
 	return image
 }
