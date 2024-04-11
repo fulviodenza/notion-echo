@@ -108,8 +108,6 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
 // 	return image
 // }
 
-	return image
-}
 func buildCalloutBlock(text string) *notionapi.CalloutBlock {
 	callout := &notionapi.CalloutBlock{
 		BasicBlock: notionapi.BasicBlock{
