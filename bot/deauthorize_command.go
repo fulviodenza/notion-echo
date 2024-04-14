@@ -15,7 +15,7 @@ type DeauthorizeCommand struct {
 }
 
 func NewDeauthorizeCommand(bot types.IBot) types.Command {
-	hc := DefaultPageCommand{
+	hc := DeauthorizeCommand{
 		IBot: bot,
 	}
 	return hc.Execute
