@@ -37,7 +37,9 @@ func (rc *RegisterCommand) Execute(ctx context.Context, update *objects.Update) 
 		return
 	}
 	oauthURL := fmt.Sprintf("%s&state=%s", os.Getenv("OAUTH_URL"), url.QueryEscape(stateToken))
+	rc.SendMessage("click on the following URL, authorize pages", update, false)
 	rc.SendMessage(oauthURL, update, false)
+	rc.SendMessage("when you have done with registration, select a default page using command `/defaultpage page`", update, true)
 }
 
 func generateStateToken() (string, error) {
