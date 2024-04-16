@@ -8,7 +8,7 @@ coverage:
     project:
       default:
         target: auto
-        threshold: 20%
+        threshold: 39.90%
 
 comment:
   layout: "reach, diff, files"
