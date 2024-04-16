@@ -24,6 +24,7 @@ func NewUserRepoMock(db map[int]*ent.User) UserRepoInterface {
 func (ur *UserRepoMock) GetUser(ctx context.Context, id int) (*ent.User, error) {
 	return ur.Db[id], nil
 }
+
 func (ur *UserRepoMock) SaveUser(ctx context.Context, id int, stateToken string) (*ent.User, error) {
 	newUser := &ent.User{
 		ID:         id,

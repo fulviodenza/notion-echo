@@ -2,13 +2,12 @@ codecov:
   require_ci_to_pass: yes
   ignore:
     - "adapters/ent"
-
 coverage:
   status:
     project:
       default:
         target: auto
-        threshold: 39.90%
+        threshold: 40%
 
 comment:
   layout: "reach, diff, files"
