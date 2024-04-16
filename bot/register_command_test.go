@@ -8,6 +8,7 @@ import (
 
 	"github.com/SakoDroid/telego/v2/objects"
 	"github.com/google/go-cmp/cmp"
+	"github.com/notion-echo/adapters/db"
 	"github.com/notion-echo/adapters/ent"
 )
 
@@ -27,7 +28,15 @@ func TestRegisterCommandExecute(t *testing.T) {
 			"register user",
 			fields{
 				update: update(withMessage("/register"), withId(1)),
-				bot:    bot(),
+				bot: bot(withUserRepo(&db.UserRepoMock{
+					Db: map[int]*ent.User{
+						1: {
+							ID:          1,
+							StateToken:  "token",
+							DefaultPage: "test",
+						},
+					},
+				})),
 			},
 			[]string{
 				"click on the following URL, authorize pages",
