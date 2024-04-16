@@ -2,11 +2,12 @@ Hi there! 👋 I'm your personal bridge to Notion, designed to make noting down 
 
 Here’s how to get started:
 
-- /register - Securely link me with your Notion account to begin. I'll guide you through this simple process.
-- /defaultpage page_name` - Set up a default Notion page where I'll neatly organize your notes.
-- /noteyour_note - Ready to note something down? Just send me a message starting with /note followed by what you'd like to remember. It's as simple as texting!
-- /getdefaultpage - Get default page for your user.
-- /deauthorize - I will forget you
+- `/help` - Displays this help message;
+- `/register` - Register your Notion notebook in the bot;
+- `/note text` - Write the text of the note on Notion;
+- `/defaultpage page_name` - Sets the default Notion page for your notes. Ensure this is an authorized page during registration;
+- `/getdefaultpage` - Get default page for your user.
+- `/deauthorize` - I will forget you
 
 Need a bit more guidance? Type /help anytime to see what I can do for you.
 
