@@ -6,18 +6,18 @@ import (
 	"github.com/jomei/notionapi"
 )
 
-type Interface interface {
+type NotionInterface interface {
 	SearchPage(ctx context.Context, pageName string) (*notionapi.Page, error)
 	Block() notionapi.BlockService
 }
 
-var _ Interface = (*Service)(nil)
+var _ NotionInterface = (*Service)(nil)
 
 type Service struct {
 	*notionapi.Client
 }
 
-func NewNotionService(client *notionapi.Client) Interface {
+func NewNotionService(client *notionapi.Client) NotionInterface {
 	return &Service{
 		Client: client,
 	}

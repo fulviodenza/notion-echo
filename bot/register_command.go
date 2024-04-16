@@ -2,8 +2,6 @@ package bot
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/base64"
 	"fmt"
 	"net/url"
 	"os"
@@ -17,18 +15,21 @@ var _ types.ICommand = (*RegisterCommand)(nil)
 
 type RegisterCommand struct {
 	types.IBot
+	generateStateToken func() (string, error)
 }
 
-func NewRegisterCommand(bot types.IBot) types.Command {
+func NewRegisterCommand(bot types.IBot, generateStateToken func() (string, error)) types.Command {
 	hc := RegisterCommand{
-		IBot: bot,
+		IBot:               bot,
+		generateStateToken: generateStateToken,
 	}
 	return hc.Execute
 }
 
 func (rc *RegisterCommand) Execute(ctx context.Context, update *objects.Update) {
-	stateToken, err := generateStateToken()
+	stateToken, err := rc.generateStateToken()
 	if err != nil {
+		rc.SendMessage(errors.ErrStateToken.Error(), update, false)
 		return
 	}
 	_, err = rc.GetUserRepo().SaveUser(ctx, update.Message.Chat.Id, stateToken)
@@ -40,14 +41,4 @@ func (rc *RegisterCommand) Execute(ctx context.Context, update *objects.Update) 
 	rc.SendMessage("click on the following URL, authorize pages", update, false)
 	rc.SendMessage(oauthURL, update, false)
 	rc.SendMessage("when you have done with registration, select a default page using command `/defaultpage page`", update, true)
-}
-
-func generateStateToken() (string, error) {
-	b := make([]byte, 32)
-	_, err := rand.Read(b)
-	if err != nil {
-		return "", err
-	}
-	stateToken := base64.URLEncoding.EncodeToString(b)
-	return stateToken, nil
 }

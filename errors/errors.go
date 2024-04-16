@@ -11,4 +11,5 @@ var (
 	ErrPageNotFound       = errors.New("page not found")
 	ErrRegistering        = errors.New("error registering")
 	ErrDeleting           = errors.New("error deleting user")
+	ErrStateToken         = errors.New("error generating state token, please retry later")
 )

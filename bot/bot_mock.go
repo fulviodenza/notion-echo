@@ -14,9 +14,10 @@ import (
 var _ types.IBot = (*MockBot)(nil)
 
 type MockBot struct {
-	Resp    string
-	Err     error
-	usersDb map[int]*ent.User
+	Resp        []string
+	Err         error
+	usersDb     map[int]*ent.User
+	VaultClient vault.VaultInterface
 }
 
 func NewMockBot(usersDb map[int]*ent.User) *MockBot {
@@ -29,7 +30,7 @@ func (b *MockBot) SendMessage(msg string, up *objects.Update, formatMarkdown boo
 	if b.Err != nil {
 		return b.Err
 	}
-	b.Resp = msg
+	b.Resp = append(b.Resp, msg)
 	return nil
 }
 
@@ -87,10 +88,15 @@ var (
 		}
 		return bot
 	}
+	withVault = func(k, v string) func(*MockBot) {
+		return func(mb *MockBot) {
+			mb.VaultClient = vault.NewVaultMock(map[string]string{k: v}, nil)
+		}
+	}
 )
 
 func (b *MockBot) SetNotionClient(token string, notionToken string) {}
 func (b *MockBot) GetNotionClient(userId string) string             { return "" }
 func (b *MockBot) SetNotionUser(token string)                       {}
-func (b *MockBot) SetVaultClient(v vault.Vault)                     {}
-func (b *MockBot) GetVaultClient() vault.Vault                      { return vault.Vault{Client: nil} }
+func (b *MockBot) SetVaultClient(v vault.VaultInterface)            {}
+func (b *MockBot) GetVaultClient() vault.VaultInterface             { return b.VaultClient }

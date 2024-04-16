@@ -31,7 +31,7 @@ type Bot struct {
 	TelegramClient bt.Bot
 	NotionClient   map[string]string
 	UserRepo       db.UserRepoInterface
-	VaultClient    vaultadapter.Vault
+	VaultClient    vaultadapter.VaultInterface
 	helpMessage    string
 }
 
@@ -224,7 +224,7 @@ func (b *Bot) GetUserRepo() db.UserRepoInterface {
 	return b.UserRepo
 }
 
-func (b *Bot) SetVaultClient(v vaultadapter.Vault) {
+func (b *Bot) SetVaultClient(v vaultadapter.VaultInterface) {
 	b.VaultClient = v
 	encryptionKey, err := generateKey()
 	if err != nil {
@@ -237,7 +237,7 @@ func (b *Bot) SetVaultClient(v vaultadapter.Vault) {
 		log.Fatalf("Error writing secret to Vault: %s", err)
 	}
 }
-func (b *Bot) GetVaultClient() vaultadapter.Vault {
+func (b *Bot) GetVaultClient() vaultadapter.VaultInterface {
 	return b.VaultClient
 }
 
@@ -251,12 +251,22 @@ func (b *Bot) initializeHandlers() map[string]func(ctx context.Context, up *objs
 	return map[string]func(ctx context.Context, up *objs.Update){
 		utils.COMMAND_NOTE:             NewNoteCommand(b),
 		utils.COMMAND_HELP:             NewHelpCommand(b),
-		utils.COMMAND_REGISTER:         NewRegisterCommand(b),
+		utils.COMMAND_REGISTER:         NewRegisterCommand(b, generateStateToken),
 		utils.COMMAND_START:            NewHelpCommand(b),
-		utils.COMMAND_DEFAULT_PAGE:     NewDefaultPageCommand(b),
+		utils.COMMAND_DEFAULT_PAGE:     NewDefaultPageCommand(b, buildNotionClient),
 		utils.COMMAND_GET_DEFAULT_PAGE: NewGetDefaultPageCommand(b),
 		utils.COMMAND_DEAUTHORIZE:      NewDeauthorizeCommand(b),
 	}
+}
+
+func generateStateToken() (string, error) {
+	b := make([]byte, 32)
+	_, err := rand.Read(b)
+	if err != nil {
+		return "", err
+	}
+	stateToken := base64.URLEncoding.EncodeToString(b)
+	return stateToken, nil
 }
 
 func generateKey() ([]byte, error) {
@@ -287,7 +297,7 @@ func (b *Bot) WriteOrGetSecret(path string, key string, value string) (string, e
 	return string(res), nil
 }
 
-func buildNotionClient(ctx context.Context, userRepo db.UserRepoInterface, id int, encKey []byte) (notion.Interface, error) {
+func buildNotionClient(ctx context.Context, userRepo db.UserRepoInterface, id int, encKey []byte) (notion.NotionInterface, error) {
 	tokenEnc, err := userRepo.GetNotionTokenByID(ctx, id)
 	if err != nil {
 		return nil, err

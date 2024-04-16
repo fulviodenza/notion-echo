@@ -38,6 +38,6 @@ type IBot interface {
 	GetNotionClient(userId string) string
 	SetUserRepo(db db.UserRepoInterface)
 	GetUserRepo() db.UserRepoInterface
-	GetVaultClient() vault.Vault
-	SetVaultClient(v vault.Vault)
+	GetVaultClient() vault.VaultInterface
+	SetVaultClient(v vault.VaultInterface)
 }

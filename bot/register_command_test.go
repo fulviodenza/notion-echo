@@ -3,22 +3,23 @@ package bot
 import (
 	"context"
 	"os"
-	"strings"
+	"sort"
 	"testing"
 
 	"github.com/SakoDroid/telego/v2/objects"
+	"github.com/google/go-cmp/cmp"
 	"github.com/notion-echo/adapters/ent"
 )
 
-func TestExecute(t *testing.T) {
-	successResponse := "localhost&state="
+func TestRegisterCommandExecute(t *testing.T) {
 	type fields struct {
 		update *objects.Update
+		bot    *MockBot
 	}
 	tests := []struct {
 		name      string
 		fields    fields
-		want      string
+		want      []string
 		wantUsers *ent.User
 		err       bool
 	}{
@@ -26,8 +27,13 @@ func TestExecute(t *testing.T) {
 			"register user",
 			fields{
 				update: update(withMessage("/register"), withId(1)),
+				bot:    bot(),
 			},
-			successResponse,
+			[]string{
+				"click on the following URL, authorize pages",
+				"localhost&state=stateToken",
+				"when you have done with registration, select a default page using command `/defaultpage page`",
+			},
 			&ent.User{
 				ID: 1,
 			},
@@ -38,22 +44,22 @@ func TestExecute(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			os.Setenv("OAUTH_URL", "localhost")
-			b := bot()
-			ec := NewRegisterCommand(b)
+			b := tt.fields.bot
+			ec := NewRegisterCommand(b, func() (string, error) {
+				return "stateToken", nil
+			})
 
 			ec(context.Background(), tt.fields.update)
 
 			if (b.Err != nil) != tt.err {
 				t.Errorf("Bot.Execute() error = %v", b.Err)
 			}
-			if !strings.Contains(b.Resp, tt.want) {
-				t.Errorf("error %s: got: %s, want: %s\n", tt.name, b.Resp, tt.want)
-			}
 
-			if u, err := b.GetUserRepo().GetStateTokenById(context.TODO(), tt.fields.update.Message.Chat.Id); err != nil || u == nil {
-				if u == nil && tt.err == false {
-					t.Errorf("expected user to be present")
-				}
+			sort.Strings(b.Resp)
+			sort.Strings(tt.want)
+
+			if diff := cmp.Diff(b.Resp, tt.want); diff != "" {
+				t.Errorf("error %s: (- got, + want) %s\n", tt.name, diff)
 			}
 		})
 	}

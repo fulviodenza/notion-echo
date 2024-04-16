@@ -11,6 +11,7 @@ import (
 
 type VaultInterface interface {
 	GetKey(path string) ([]byte, error)
+	Logical() *vault.Logical
 }
 
 var _ VaultInterface = (*Vault)(nil)
@@ -19,7 +20,7 @@ type Vault struct {
 	*vault.Client
 }
 
-func SetupVault(addr, token string) Vault {
+func SetupVault(addr, token string) VaultInterface {
 	config := vault.DefaultConfig()
 	config.Address = addr
 
@@ -30,10 +31,14 @@ func SetupVault(addr, token string) Vault {
 
 	client.SetToken(token)
 
-	return Vault{client}
+	return &Vault{client}
 }
 
-func (v Vault) GetKey(path string) ([]byte, error) {
+func (v *Vault) Logical() *vault.Logical {
+	return v.Client.Logical()
+}
+
+func (v *Vault) GetKey(path string) ([]byte, error) {
 	s, err := v.Logical().Read(path)
 	if err != nil {
 		return nil, err
