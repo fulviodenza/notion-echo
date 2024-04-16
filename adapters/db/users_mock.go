@@ -44,5 +44,7 @@ func (ur *UserRepoMock) GetNotionTokenByID(ctx context.Context, id int) (string,
 	return "", nil
 }
 func (ur *UserRepoMock) SetDefaultPage(ctx context.Context, id int, page string) error { return nil }
-func (ur *UserRepoMock) GetDefaultPage(ctx context.Context, id int) (string, error)    { return "", nil }
-func (ur *UserRepoMock) DeleteUser(ctx context.Context, id int) error                  { return nil }
+func (ur *UserRepoMock) GetDefaultPage(ctx context.Context, id int) (string, error) {
+	return "test", nil
+}
+func (ur *UserRepoMock) DeleteUser(ctx context.Context, id int) error { return nil }
