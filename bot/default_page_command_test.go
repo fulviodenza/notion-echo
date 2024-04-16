@@ -13,10 +13,13 @@ import (
 	"github.com/notion-echo/adapters/db"
 	"github.com/notion-echo/adapters/ent"
 	"github.com/notion-echo/adapters/notion"
+	notionerrors "github.com/notion-echo/errors"
 )
 
 func TestDefaultPageCommandExecute(t *testing.T) {
 	successResp := "page test set as default!"
+	selectPageResp := "please, select a page"
+
 	type fields struct {
 		update               *objects.Update
 		envs                 map[string]string
@@ -46,7 +49,7 @@ func TestDefaultPageCommandExecute(t *testing.T) {
 					},
 				},
 			},
-			[]string{"page test set as default!"},
+			[]string{successResp},
 			&ent.User{
 				ID: 1,
 			},
@@ -73,7 +76,7 @@ func TestDefaultPageCommandExecute(t *testing.T) {
 				bot:                  bot(withVault("/localhost/test/", "testKey")),
 				buildNotionClientErr: errors.New(""),
 			},
-			[]string{"error setting default page"},
+			[]string{notionerrors.ErrSetDefaultPage.Error()},
 			&ent.User{
 				ID: 1,
 			},
@@ -94,7 +97,7 @@ func TestDefaultPageCommandExecute(t *testing.T) {
 					},
 				},
 			},
-			[]string{"page not found"},
+			[]string{notionerrors.ErrPageNotFound.Error()},
 			&ent.User{
 				ID: 1,
 			},
@@ -115,7 +118,7 @@ func TestDefaultPageCommandExecute(t *testing.T) {
 					},
 				},
 			},
-			[]string{"page not found"},
+			[]string{notionerrors.ErrPageNotFound.Error()},
 			&ent.User{
 				ID: 1,
 			},
@@ -136,7 +139,7 @@ func TestDefaultPageCommandExecute(t *testing.T) {
 					},
 				},
 			},
-			[]string{"please, select a page"},
+			[]string{selectPageResp},
 			&ent.User{
 				ID: 1,
 			},
