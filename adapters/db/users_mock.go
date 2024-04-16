@@ -21,6 +21,9 @@ func NewUserRepoMock(db map[int]*ent.User) UserRepoInterface {
 	}
 }
 
+func (ur *UserRepoMock) GetUser(ctx context.Context, id int) (*ent.User, error) {
+	return ur.Db[id], nil
+}
 func (ur *UserRepoMock) SaveUser(ctx context.Context, id int, stateToken string) (*ent.User, error) {
 	newUser := &ent.User{
 		ID:         id,
@@ -57,4 +60,7 @@ func (ur *UserRepoMock) GetDefaultPage(ctx context.Context, id int) (string, err
 
 	return "", errors.ErrPageNotFound
 }
-func (ur *UserRepoMock) DeleteUser(ctx context.Context, id int) error { return nil }
+func (ur *UserRepoMock) DeleteUser(ctx context.Context, id int) error {
+	ur.Db[id] = nil
+	return nil
+}

@@ -11,6 +11,7 @@ import (
 )
 
 type UserRepoInterface interface {
+	GetUser(ctx context.Context, id int) (*ent.User, error)
 	SaveUser(ctx context.Context, id int, stateToken string) (*ent.User, error)
 	GetStateTokenById(ctx context.Context, id int) (*ent.User, error)
 	SaveNotionTokenByStateToken(ctx context.Context, notionToken, stateToken string) (*ent.User, error)
@@ -24,6 +25,10 @@ var _ UserRepoInterface = (*UserRepo)(nil)
 
 type UserRepo struct {
 	*ent.Client
+}
+
+func (ur *UserRepo) GetUser(ctx context.Context, id int) (*ent.User, error) {
+	return ur.User.Get(ctx, id)
 }
 
 func (ur *UserRepo) SaveUser(ctx context.Context, id int, stateToken string) (*ent.User, error) {
