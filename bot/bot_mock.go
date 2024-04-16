@@ -37,7 +37,7 @@ func (b *MockBot) SendMessage(msg string, up *objects.Update, formatMarkdown boo
 func (b *MockBot) Start(ctx context.Context) {}
 
 func (b *MockBot) GetHelpMessage() string {
-	return ""
+	return "help message"
 }
 
 func (b *MockBot) SetTelegramClient(bot bt.Bot) {}
