@@ -1,5 +1,7 @@
 codecov:
   require_ci_to_pass: yes
+  ignore:
+    - "adapters/ent"
 
 coverage:
   status:
