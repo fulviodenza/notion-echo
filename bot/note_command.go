@@ -7,6 +7,8 @@ import (
 
 	"github.com/SakoDroid/telego/v2/objects"
 	"github.com/jomei/notionapi"
+	"github.com/notion-echo/adapters/db"
+	"github.com/notion-echo/adapters/notion"
 	"github.com/notion-echo/bot/types"
 	"github.com/notion-echo/errors"
 )
@@ -21,11 +23,13 @@ var BotEmoji = notionapi.Emoji("🤖")
 
 type NoteCommand struct {
 	types.IBot
+	buildNotionClient func(ctx context.Context, userRepo db.UserRepoInterface, id int, encKey []byte) (notion.NotionInterface, error)
 }
 
-func NewNoteCommand(bot types.IBot) types.Command {
+func NewNoteCommand(bot types.IBot, buildNotionClient func(ctx context.Context, userRepo db.UserRepoInterface, id int, encKey []byte) (notion.NotionInterface, error)) types.Command {
 	hc := NoteCommand{
-		IBot: bot,
+		IBot:              bot,
+		buildNotionClient: buildNotionClient,
 	}
 	return hc.Execute
 }
@@ -39,13 +43,17 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
 
 	blocks := &notionapi.AppendBlockChildrenRequest{}
 	noteText := strings.Replace(update.Message.Text, "/note", "", 1)
+	if noteText == "" {
+		cc.SendMessage("write something in your note!", update, false)
+		return
+	}
 	blocks.Children = append(blocks.Children, buildCalloutBlock(noteText))
 
 	encKey, err := cc.GetVaultClient().GetKey(os.Getenv("VAULT_PATH"))
 	if err != nil {
 		return
 	}
-	notionClient, err := buildNotionClient(ctx, cc.GetUserRepo(), id, encKey)
+	notionClient, err := cc.buildNotionClient(ctx, cc.GetUserRepo(), id, encKey)
 	if err != nil {
 		cc.SendMessage(errors.ErrNotRegistered.Error(), update, false)
 		return

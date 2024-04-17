@@ -2,7 +2,6 @@ package bot
 
 import (
 	"context"
-	"os"
 	"sort"
 	"testing"
 
@@ -12,23 +11,22 @@ import (
 	"github.com/notion-echo/adapters/ent"
 )
 
-func TestRegisterCommandExecute(t *testing.T) {
+func TestDeauthorizeCommandExecute(t *testing.T) {
 	type fields struct {
 		update *objects.Update
 		bot    *MockBot
 	}
 	tests := []struct {
-		name      string
-		fields    fields
-		want      []string
-		wantUsers *ent.User
-		err       bool
+		name   string
+		fields fields
+		want   []string
+		err    bool
 	}{
 		{
-			"register user",
+			"deauthorize",
 			fields{
-				update: update(withMessage("/register"), withId(1)),
-				bot: bot(withUserRepo(&db.UserRepoMock{
+				update: update(withMessage("/deauthorize"), withId(1)),
+				bot: bot(withVault("/localhost/test/", "testKey"), withUserRepo(&db.UserRepoMock{
 					Db: map[int]*ent.User{
 						1: {
 							ID:          1,
@@ -38,25 +36,14 @@ func TestRegisterCommandExecute(t *testing.T) {
 					},
 				})),
 			},
-			[]string{
-				"click on the following URL, authorize pages",
-				"localhost&state=stateToken",
-				"when you have done with registration, select a default page using command `/defaultpage page`",
-			},
-			&ent.User{
-				ID: 1,
-			},
+			[]string{"deleted user!"},
 			false,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			os.Setenv("OAUTH_URL", "localhost")
 			b := tt.fields.bot
-			ec := NewRegisterCommand(b, func() (string, error) {
-				return "stateToken", nil
-			})
+			ec := NewDeauthorizeCommand(b)
 
 			ec(context.Background(), tt.fields.update)
 
@@ -69,6 +56,14 @@ func TestRegisterCommandExecute(t *testing.T) {
 
 			if diff := cmp.Diff(b.Resp, tt.want); diff != "" {
 				t.Errorf("error %s: (- got, + want) %s\n", tt.name, diff)
+			}
+
+			u, err := tt.fields.bot.usersDb.GetUser(context.TODO(), tt.fields.update.Message.Chat.Id)
+			if err != nil {
+				t.Errorf("test: %v\nexpected user to not be present", tt.name)
+			}
+			if u != nil {
+				t.Errorf("test: %v\nexpected user to not be present", tt.name)
 			}
 		})
 	}

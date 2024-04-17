@@ -6,7 +6,6 @@ import (
 	bt "github.com/SakoDroid/telego/v2"
 	"github.com/SakoDroid/telego/v2/objects"
 	"github.com/notion-echo/adapters/db"
-	"github.com/notion-echo/adapters/ent"
 	"github.com/notion-echo/adapters/vault"
 	"github.com/notion-echo/bot/types"
 )
@@ -16,11 +15,11 @@ var _ types.IBot = (*MockBot)(nil)
 type MockBot struct {
 	Resp        []string
 	Err         error
-	usersDb     map[int]*ent.User
+	usersDb     db.UserRepoInterface
 	VaultClient vault.VaultInterface
 }
 
-func NewMockBot(usersDb map[int]*ent.User) *MockBot {
+func NewMockBot(usersDb db.UserRepoInterface) *MockBot {
 	return &MockBot{
 		usersDb: usersDb,
 	}
@@ -50,7 +49,7 @@ func (b *MockBot) SetUserRepo(db db.UserRepoInterface) {
 
 }
 func (b *MockBot) GetUserRepo() db.UserRepoInterface {
-	return db.NewUserRepoMock(b.usersDb)
+	return b.usersDb
 }
 
 var (
@@ -82,7 +81,7 @@ var (
 
 var (
 	bot = func(opts ...func(*MockBot)) *MockBot {
-		bot := NewMockBot(map[int]*ent.User{})
+		bot := NewMockBot(db.NewUserRepoMock(nil))
 		for _, o := range opts {
 			o(bot)
 		}
@@ -91,6 +90,11 @@ var (
 	withVault = func(k, v string) func(*MockBot) {
 		return func(mb *MockBot) {
 			mb.VaultClient = vault.NewVaultMock(map[string]string{k: v}, nil)
+		}
+	}
+	withUserRepo = func(repo db.UserRepoInterface) func(*MockBot) {
+		return func(mb *MockBot) {
+			mb.usersDb = repo
 		}
 	}
 )
