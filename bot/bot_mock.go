@@ -105,4 +105,4 @@ func (b *MockBot) GetNotionClient(userId string) string             { return "" 
 func (b *MockBot) SetNotionUser(token string)                       {}
 func (b *MockBot) SetVaultClient(v vault.VaultInterface)            {}
 func (b *MockBot) GetVaultClient() vault.VaultInterface             { return b.VaultClient }
-func (b *MockBot) Logger() *logrus.Logger                           { return nil }
+func (b *MockBot) Logger() *logrus.Logger                           { return logrus.New() }
