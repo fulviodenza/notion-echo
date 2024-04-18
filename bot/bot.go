@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -18,6 +17,7 @@ import (
 	"github.com/notion-echo/bot/types"
 	"github.com/notion-echo/oauth"
 	"github.com/notion-echo/utils"
+	"github.com/sirupsen/logrus"
 
 	bt "github.com/SakoDroid/telego/v2"
 	cfg "github.com/SakoDroid/telego/v2/configs"
@@ -33,6 +33,7 @@ type Bot struct {
 	UserRepo       db.UserRepoInterface
 	VaultClient    vaultadapter.VaultInterface
 	helpMessage    string
+	logger         *logrus.Logger
 }
 
 // this cast force us to follow the given interface
@@ -50,15 +51,18 @@ var (
 )
 
 func NewBotWithConfig() (*Bot, error) {
-	bot := &Bot{}
+	bot := &Bot{
+		logger: logrus.New(),
+	}
+	bot.Logger().SetFormatter(&logrus.JSONFormatter{})
 
-	userRepo, err := db.SetupAndConnectDatabase(databaseUrl)
+	userRepo, err := db.SetupAndConnectDatabase(databaseUrl, bot.Logger())
 	if err != nil {
 		return nil, err
 	}
 	bot.SetUserRepo(userRepo)
 
-	vaultClient := vaultadapter.SetupVault(vaultAddr, vaultToken)
+	vaultClient := vaultadapter.SetupVault(vaultAddr, vaultToken, bot.Logger())
 	bot.SetVaultClient(vaultClient)
 
 	bot.loadHelpMessage()
@@ -84,7 +88,7 @@ func (b *Bot) Start(ctx context.Context) {
 	go func() {
 		for {
 			update := <-*updateCh
-			log.Printf("got update: %v\n", update.Update_id)
+			b.Logger().WithFields(logrus.Fields{"update_id": update.Update_id}).Info("received update")
 		}
 	}()
 
@@ -114,7 +118,9 @@ func (b *Bot) Start(ctx context.Context) {
 
 func (b *Bot) RunOauth2Endpoint() {
 	e := echo.New()
-	e.Use(middleware.Logger())
+	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
+		Format: `{"time":"${time_rfc3339}", "method":"${method}", "uri":"${uri}", "status":${status}}` + "\n",
+	}))
 	e.Use(middleware.Recover())
 
 	e.GET("/", func(c echo.Context) error {
@@ -126,7 +132,7 @@ func (b *Bot) RunOauth2Endpoint() {
 		return nil
 	})
 	e.GET("/oauth2", func(c echo.Context) error {
-		log.Println("received registration request")
+		e.Logger.Info("received registration request")
 		notionToken, err := oauth.Handler(c)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, err.Error())
@@ -187,14 +193,14 @@ func (b *Bot) SendMessage(msg string, up *objs.Update, formatMarkdown bool) erro
 		for _, m := range msgs {
 			_, err := b.TelegramClient.SendMessage(up.Message.Chat.Id, m, parseMode, 0, false, false)
 			if err != nil {
-				log.Printf("[SendMessage]: sending message to user: %v", err.Error())
+				b.Logger().WithFields(logrus.Fields{"error": err}).Error("failed to send message")
 				return err
 			}
 		}
 	} else {
 		_, err := b.TelegramClient.SendMessage(up.Message.Chat.Id, msg, parseMode, 0, false, false)
 		if err != nil {
-			log.Printf("[SendMessage]: sending message to user: %v", err.Error())
+			b.Logger().WithFields(logrus.Fields{"error": err}).Error("failed to send message")
 			return err
 		}
 	}
@@ -205,7 +211,7 @@ func (b *Bot) loadHelpMessage() {
 	helpMessage := make([]byte, 0)
 	err := utils.Read(utils.HELP_MESSAGE_ASSET, &helpMessage)
 	if err != nil {
-		log.Fatalf("Failed to load help message: %v", err)
+		b.Logger().WithFields(logrus.Fields{"error": err}).Fatal("failed to load help message")
 	}
 	b.helpMessage = string(helpMessage)
 }
@@ -228,13 +234,13 @@ func (b *Bot) SetVaultClient(v vaultadapter.VaultInterface) {
 	b.VaultClient = v
 	encryptionKey, err := generateKey()
 	if err != nil {
-		log.Fatalf("Error generating key: %s", err)
+		b.Logger().WithFields(logrus.Fields{"error": err}).Fatal("error generating key")
 	}
 	encKeyStr := base64.StdEncoding.EncodeToString(encryptionKey)
 
 	_, err = b.WriteOrGetSecret(vaultSecretPath, vaultSecretKey, encKeyStr)
 	if err != nil {
-		log.Fatalf("Error writing secret to Vault: %s", err)
+		b.Logger().WithFields(logrus.Fields{"error": err}).Fatal("error writing secret to Vault")
 	}
 }
 func (b *Bot) GetVaultClient() vaultadapter.VaultInterface {
@@ -247,6 +253,11 @@ func (b *Bot) SetNotionUser(token string) {
 	}
 	b.NotionClient[token] = ""
 }
+
+func (b *Bot) Logger() *logrus.Logger {
+	return b.logger
+}
+
 func (b *Bot) initializeHandlers() map[string]func(ctx context.Context, up *objs.Update) {
 	return map[string]func(ctx context.Context, up *objs.Update){
 		utils.COMMAND_NOTE:             NewNoteCommand(b, buildNotionClient),
@@ -280,7 +291,7 @@ func generateKey() ([]byte, error) {
 func (b *Bot) WriteOrGetSecret(path string, key string, value string) (string, error) {
 	res, err := b.VaultClient.GetKey(path)
 	if err != nil || res == nil {
-		log.Printf("Failed to read secret: %v, assuming it does not exist and creating it.", err)
+		b.Logger().Infof("failed to read secret: %v, assuming it does not exist and creating it.", err)
 
 		data := map[string]interface{}{
 			key: value,
@@ -289,9 +300,9 @@ func (b *Bot) WriteOrGetSecret(path string, key string, value string) (string, e
 		if err != nil {
 			return "", fmt.Errorf("failed to write secret to Vault: %v", err)
 		}
-		log.Printf("Secret written to path %s.", path)
+		b.Logger().Infof("secret written to path %s.", path)
 	} else {
-		log.Printf("Secret at path %s already exists, not overwriting.", path)
+		b.Logger().Infof("secret at path %s already exists, not overwriting.", path)
 	}
 
 	return string(res), nil

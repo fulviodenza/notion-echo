@@ -11,6 +11,7 @@ import (
 	"github.com/notion-echo/adapters/notion"
 	"github.com/notion-echo/bot/types"
 	"github.com/notion-echo/errors"
+	"github.com/sirupsen/logrus"
 )
 
 var _ types.ICommand = (*NoteCommand)(nil)
@@ -51,26 +52,34 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
 
 	encKey, err := cc.GetVaultClient().GetKey(os.Getenv("VAULT_PATH"))
 	if err != nil {
+		cc.Logger().WithFields(logrus.Fields{"error": err}).Error("note error")
+		cc.SendMessage(errors.ErrInternal.Error(), update, false)
 		return
 	}
 	notionClient, err := cc.buildNotionClient(ctx, cc.GetUserRepo(), id, encKey)
 	if err != nil {
+		cc.Logger().WithFields(logrus.Fields{"error": err}).Error("note error")
 		cc.SendMessage(errors.ErrNotRegistered.Error(), update, false)
 		return
 	}
 	defaultPage, err := cc.GetUserRepo().GetDefaultPage(ctx, id)
+	if err != nil {
+		cc.Logger().WithFields(logrus.Fields{"error": err}).Error("note error")
+	}
 	if err != nil || defaultPage == "" {
 		cc.SendMessage(errors.ErrPageNotFound.Error(), update, false)
 		return
 	}
 	page, err := notionClient.SearchPage(ctx, defaultPage)
 	if err != nil {
+		cc.Logger().WithFields(logrus.Fields{"error": err}).Error("note error")
 		cc.SendMessage(errors.ErrPageNotFound.Error(), update, false)
 		return
 	}
 
 	_, err = notionClient.Block().AppendChildren(ctx, notionapi.BlockID(page.ID), blocks)
 	if err != nil {
+		cc.Logger().WithFields(logrus.Fields{"error": err}).Error("note error")
 		cc.SendMessage(errors.ErrSaveNote.Error(), update, false)
 		return
 	}

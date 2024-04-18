@@ -4,16 +4,16 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
 	"time"
 
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/notion-echo/adapters/ent"
+	"github.com/sirupsen/logrus"
 )
 
-func SetupAndConnectDatabase(baseConnectionString string) (UserRepoInterface, error) {
+func SetupAndConnectDatabase(baseConnectionString string, logger *logrus.Logger) (UserRepoInterface, error) {
 	var db *sql.DB
 	var err error
 
@@ -26,8 +26,10 @@ func SetupAndConnectDatabase(baseConnectionString string) (UserRepoInterface, er
 				break
 			}
 		}
+		logger.WithFields(logrus.Fields{
+			"error": err,
+		}).Info("Database unavailable, retrying...")
 
-		log.Printf("\n[SetupAndConnectDatabase]: Database unavailable, retrying...")
 		time.Sleep(2 * time.Second)
 	}
 
@@ -39,10 +41,15 @@ func SetupAndConnectDatabase(baseConnectionString string) (UserRepoInterface, er
 	client := ent.NewClient(ent.Driver(drv))
 
 	if err := client.Schema.Create(context.Background()); err != nil {
-		log.Fatalf("failed creating schema resources: %v", err)
+		logger.WithFields(logrus.Fields{
+			"error": err,
+		}).Fatalf("failed creating schema resources: %v", err)
 	}
 
-	log.Printf("\n[SetupAndConnectDatabase]: Database connection established")
+	logger.WithFields(logrus.Fields{
+		"database": baseConnectionString,
+	}).Info("Database connection established")
+
 	return &UserRepo{
 		client,
 	}, nil

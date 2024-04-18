@@ -3,7 +3,6 @@ package bot
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 
@@ -12,6 +11,7 @@ import (
 	"github.com/notion-echo/adapters/notion"
 	"github.com/notion-echo/bot/types"
 	"github.com/notion-echo/errors"
+	"github.com/sirupsen/logrus"
 )
 
 var _ types.ICommand = (*DefaultPageCommand)(nil)
@@ -36,11 +36,13 @@ func (dc *DefaultPageCommand) Execute(ctx context.Context, update *objects.Updat
 
 	encKey, err := dc.GetVaultClient().GetKey(os.Getenv("VAULT_PATH"))
 	if err != nil {
+		dc.Logger().WithFields(logrus.Fields{"error": err}).Error("default page error")
 		dc.SendMessage(errors.ErrNotRegistered.Error(), update, false)
 		return
 	}
 	notionClient, err := dc.buildNotionClient(ctx, dc.GetUserRepo(), update.Message.Chat.Id, encKey)
 	if err != nil {
+		dc.Logger().WithFields(logrus.Fields{"error": err}).Error("default page error")
 		dc.SendMessage(errors.ErrSetDefaultPage.Error(), update, false)
 		return
 	}
@@ -58,12 +60,15 @@ func (dc *DefaultPageCommand) Execute(ctx context.Context, update *objects.Updat
 
 	p, err := notionClient.SearchPage(ctx, selectedPage)
 	if err != nil || p.ID == "" || p.Object == "" {
+		if err != nil {
+			dc.Logger().WithFields(logrus.Fields{"error": err}).Error("default page error")
+		}
 		dc.SendMessage(errors.ErrPageNotFound.Error(), update, false)
 		return
 	}
 	err = dc.GetUserRepo().SetDefaultPage(ctx, update.Message.Chat.Id, selectedPage)
 	if err != nil {
-		log.Println(err)
+		dc.Logger().WithFields(logrus.Fields{"error": err}).Error("default page error")
 		dc.SendMessage(errors.ErrSetDefaultPage.Error(), update, false)
 		return
 	}

@@ -12,4 +12,5 @@ var (
 	ErrRegistering        = errors.New("error registering")
 	ErrDeleting           = errors.New("error deleting user")
 	ErrStateToken         = errors.New("error generating state token, please retry later")
+	ErrInternal           = errors.New("it seems we are having internal troubles, please come back later")
 )

@@ -3,7 +3,6 @@ package db
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/notion-echo/adapters/ent"
@@ -49,7 +48,7 @@ func (ur *UserRepo) SaveUser(ctx context.Context, id int, stateToken string) (*e
 		}
 		return u, nil
 	}
-	log.Println("user was created: ", u)
+
 	return u, nil
 }
 
