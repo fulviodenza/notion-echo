@@ -59,12 +59,8 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
 		return
 	}
 	defaultPage, err := cc.GetUserRepo().GetDefaultPage(ctx, id)
-	if err != nil {
+	if err != nil || defaultPage == "" {
 		cc.SendMessage(errors.ErrPageNotFound.Error(), update, false)
-		return
-	}
-	if defaultPage == "" {
-		cc.SendMessage("first choose a default page between the authorized pages from your Notion!", update, false)
 		return
 	}
 	page, err := notionClient.SearchPage(ctx, defaultPage)
