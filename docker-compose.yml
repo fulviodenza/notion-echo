@@ -11,17 +11,17 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-  notion-echo:
-    build: .
-    container_name: notion-echo
-    depends_on:
-      - postgres
-    environment:
-      DB_HOST: localhost
-      DB_USER: postgres
-      DB_PASSWORD: password
-      DB_NAME: notion-echo
-    ports:
-      - "8080:8080"
+  # notion-echo:
+  #   build: .
+  #   container_name: notion-echo
+  #   depends_on:
+  #     - postgres
+  #   environment:
+  #     DB_HOST: localhost
+  #     DB_USER: postgres
+  #     DB_PASSWORD: password
+  #     DB_NAME: notion-echo
+  #   ports:
+  #     - "8080:8080"
 volumes:
   postgres_data:

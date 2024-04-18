@@ -11,6 +11,14 @@ import (
 	"github.com/notion-echo/adapters/notion"
 	"github.com/notion-echo/bot/types"
 	"github.com/notion-echo/errors"
+<<<<<<< Updated upstream
+=======
+	"github.com/sirupsen/logrus"
+	"github.com/yuin/goldmark"
+	"github.com/yuin/goldmark/ast"
+	"github.com/yuin/goldmark/extension"
+	"github.com/yuin/goldmark/text"
+>>>>>>> Stashed changes
 )
 
 var _ types.ICommand = (*NoteCommand)(nil)
@@ -117,6 +125,22 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
 // }
 
 func buildCalloutBlock(text string) *notionapi.CalloutBlock {
+	blocks := markdownToNotionBlocks(text) // Convert Markdown to Notion blocks
+	// Extract the rich text for non-list blocks and prepare list blocks to be added as children.
+	var richTexts []notionapi.RichText
+	var listBlocks []notionapi.Block
+	for _, block := range blocks {
+		switch b := block.(type) {
+		case *notionapi.ParagraphBlock:
+			richTexts = blocksToRichTexts(blocks)
+			richTexts = append(richTexts, b.Paragraph.RichText...)
+		case *notionapi.BulletedListItemBlock, *notionapi.NumberedListItemBlock:
+			// If we can include list blocks, append them directly to the children of the callout
+			richTexts = blocksToRichTexts(blocks)
+			listBlocks = append(listBlocks, block)
+		}
+	}
+
 	callout := &notionapi.CalloutBlock{
 		BasicBlock: notionapi.BasicBlock{
 			Type:   notionapi.BlockCallout,
@@ -127,14 +151,176 @@ func buildCalloutBlock(text string) *notionapi.CalloutBlock {
 				Type:  "emoji",
 				Emoji: &BotEmoji,
 			},
-			RichText: []notionapi.RichText{
-				{
-					Text: &notionapi.Text{Content: text},
-				},
-			},
-			Children: nil,
+			RichText: richTexts,  // Set the rich text from non-list blocks
+			Children: listBlocks, // Add list blocks directly if they are allowed as children
 		},
 	}
-
 	return callout
+}
+
+func markdownToNotionBlocks(md string) []notionapi.Block {
+	var blocks []notionapi.Block
+	var currentBlock notionapi.Block
+	var insideListItem bool // To track if we are currently inside a list item
+
+	markdown := goldmark.New(
+		goldmark.WithExtensions(extension.GFM),
+	)
+	reader := text.NewReader([]byte(md))
+	document := markdown.Parser().Parse(reader)
+	ast.Walk(document, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
+		switch v := n.(type) {
+		case *ast.Emphasis:
+			if !entering {
+				// Apply formatting styles after processing all child nodes
+				applyFormatting(currentBlock, v.Level, false)
+			}
+		case *ast.ListItem:
+			if entering {
+				// Starting a new list item
+				insideListItem = true
+				currentBlock = createListItemBlock(v) // Use your function to create a list item block
+			} else {
+				// Exiting a list item
+				blocks = append(blocks, currentBlock)
+				insideListItem = false
+				currentBlock = nil
+			}
+		case *ast.Text:
+			textContent := string(v.Text(reader.Source()))
+			trimmedContent := strings.TrimSpace(textContent)
+			if trimmedContent != "" {
+				if insideListItem && currentBlock != nil {
+					// We're inside a list item, add text to the current list item block
+					addToRichText(currentBlock, trimmedContent, v.PreviousSibling() == nil, v.NextSibling() == nil)
+					insideListItem = false
+				}
+				if currentBlock == nil && !insideListItem {
+					addToRichText(nil, trimmedContent, true, true)
+				}
+			}
+		}
+		return ast.WalkContinue, nil
+	})
+
+	return blocks
+}
+
+func blocksToRichTexts(blocks []notionapi.Block) []notionapi.RichText {
+	var richTexts []notionapi.RichText
+	for _, block := range blocks {
+		switch b := block.(type) {
+		case *notionapi.ParagraphBlock:
+			richTexts = append(richTexts, b.Paragraph.RichText...)
+		case *notionapi.BulletedListItemBlock:
+			// Add a bullet and a space before the list item content
+			richTexts = append(richTexts, processListItem("- ")...)
+		case *notionapi.NumberedListItemBlock:
+			// For numbered lists, you would somehow need to keep track of the item number.
+			// This is a more complex situation and may require additional state to track item numbers correctly.
+			richTexts = append(richTexts, processListItem("1. ")...) // Simplified
+		}
+	}
+	return richTexts
+}
+
+func processListItem(listItemPrefix string) []notionapi.RichText {
+	var processedTexts []notionapi.RichText
+	// Add the list item prefix (e.g., "- " for bullets, "1. " for numbers)
+	processedTexts = append(processedTexts, notionapi.RichText{
+		Text: &notionapi.Text{
+			Content: listItemPrefix,
+		},
+	})
+	return processedTexts
+}
+
+func createListItemBlock(v *ast.ListItem) notionapi.Block {
+	// Determine if the list is ordered or not
+	isOrdered := v.Parent().(*ast.List).IsOrdered()
+	richText := []notionapi.RichText{} // Placeholder for initial rich text content
+
+	if isOrdered {
+		return &notionapi.NumberedListItemBlock{
+			BasicBlock: notionapi.BasicBlock{
+				Type:   notionapi.BlockTypeNumberedListItem,
+				Object: "block",
+			},
+			NumberedListItem: notionapi.ListItem{
+				RichText: richText,
+			},
+		}
+	} else {
+		return &notionapi.BulletedListItemBlock{
+			BasicBlock: notionapi.BasicBlock{
+				Type:   notionapi.BlockTypeBulletedListItem,
+				Object: "block",
+			},
+			BulletedListItem: notionapi.ListItem{
+				RichText: richText,
+			},
+		}
+	}
+}
+
+func addToRichText(block notionapi.Block, text string, isFirst bool, isLast bool) {
+	var richTexts *[]notionapi.RichText
+	if block == nil {
+		richTexts = &[]notionapi.RichText{
+			{
+				Text: &notionapi.Text{
+					Content: text,
+				},
+			},
+		}
+	}
+	switch v := block.(type) {
+	case *notionapi.ParagraphBlock:
+		richTexts = &v.Paragraph.RichText
+	case *notionapi.NumberedListItemBlock:
+		richTexts = &v.NumberedListItem.RichText
+	case *notionapi.BulletedListItemBlock:
+		richTexts = &v.BulletedListItem.RichText
+	}
+
+	// Strip leading and trailing space if it's not the first or last segment
+	if !isFirst {
+		text = strings.TrimLeft(text, " \t")
+	}
+	if !isLast {
+		text = strings.TrimRight(text, " \t")
+	}
+
+	*richTexts = append(*richTexts, notionapi.RichText{
+		Text: &notionapi.Text{
+			Content: text,
+		},
+	})
+}
+
+func applyFormatting(block notionapi.Block, level int, isItalic bool) {
+	var richTexts *[]notionapi.RichText
+	switch v := block.(type) {
+	case *notionapi.ParagraphBlock:
+		richTexts = &v.Paragraph.RichText
+	case *notionapi.NumberedListItemBlock:
+		richTexts = &v.NumberedListItem.RichText
+	case *notionapi.BulletedListItemBlock:
+		richTexts = &v.BulletedListItem.RichText
+	}
+
+	// Apply formatting to the last added rich text
+	if len(*richTexts) > 0 {
+		last := len(*richTexts) - 1
+		if (*richTexts)[last].Annotations == nil {
+			(*richTexts)[last].Annotations = &notionapi.Annotations{}
+		}
+		if isItalic {
+			(*richTexts)[last].Annotations.Italic = true
+		} else {
+			if level == 2 {
+				(*richTexts)[last].Annotations.Bold = true
+			} // Add more conditions if needed
+		}
+	}
 }
