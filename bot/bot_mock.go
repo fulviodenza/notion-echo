@@ -6,6 +6,7 @@ import (
 	bt "github.com/SakoDroid/telego/v2"
 	"github.com/SakoDroid/telego/v2/objects"
 	"github.com/notion-echo/adapters/db"
+	"github.com/notion-echo/adapters/ent"
 	"github.com/notion-echo/adapters/vault"
 	"github.com/notion-echo/bot/types"
 	"github.com/sirupsen/logrus"
@@ -82,7 +83,7 @@ var (
 
 var (
 	bot = func(opts ...func(*MockBot)) *MockBot {
-		bot := NewMockBot(db.NewUserRepoMock(nil))
+		bot := NewMockBot(db.NewUserRepoMock(map[int]*ent.User{}, nil))
 		for _, o := range opts {
 			o(bot)
 		}

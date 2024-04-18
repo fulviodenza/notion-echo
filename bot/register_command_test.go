@@ -2,6 +2,7 @@ package bot
 
 import (
 	"context"
+	"errors"
 	"os"
 	"sort"
 	"testing"
@@ -10,6 +11,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/notion-echo/adapters/db"
 	"github.com/notion-echo/adapters/ent"
+	notionerrors "github.com/notion-echo/errors"
 )
 
 func TestRegisterCommandExecute(t *testing.T) {
@@ -42,6 +44,22 @@ func TestRegisterCommandExecute(t *testing.T) {
 				"click on the following URL, authorize pages",
 				"localhost&state=stateToken",
 				"when you have done with registration, select a default page using command `/defaultpage page`",
+			},
+			&ent.User{
+				ID: 1,
+			},
+			false,
+		},
+		{
+			"error registering user",
+			fields{
+				update: update(withMessage("/register"), withId(1)),
+				bot: bot(withUserRepo(&db.UserRepoMock{
+					Err: errors.New(""),
+				})),
+			},
+			[]string{
+				notionerrors.ErrRegistering.Error(),
 			},
 			&ent.User{
 				ID: 1,

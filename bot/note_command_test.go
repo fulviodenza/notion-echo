@@ -138,6 +138,20 @@ func TestNoteCommandExecute(t *testing.T) {
 			},
 			false,
 		},
+		{
+			"vault env var not found",
+			fields{
+				update: update(withMessage("/note test"), withId(1)),
+				bot:    bot(withVault("/localhost/test/", "testKey")),
+			},
+			[]string{
+				boterrors.ErrInternal.Error(),
+			},
+			&ent.User{
+				ID: 1,
+			},
+			false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

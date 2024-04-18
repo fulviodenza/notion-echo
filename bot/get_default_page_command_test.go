@@ -2,6 +2,7 @@ package bot
 
 import (
 	"context"
+	"errors"
 	"sort"
 	"testing"
 
@@ -49,6 +50,16 @@ func TestGetDefaultPageCommandExecute(t *testing.T) {
 							DefaultPage: "",
 						},
 					},
+				})),
+			},
+			[]string{"page not found"},
+		},
+		{
+			"error getting default page",
+			fields{
+				update: update(withMessage("/getdefaultpage"), withId(1)),
+				bot: bot(withUserRepo(&db.UserRepoMock{
+					Err: errors.New(""),
 				})),
 			},
 			[]string{"page not found"},
