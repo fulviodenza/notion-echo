@@ -2,11 +2,11 @@ package vault
 
 import (
 	"encoding/base64"
-	"log"
 	"os"
 
 	vault "github.com/hashicorp/vault/api"
 	"github.com/notion-echo/utils"
+	"github.com/sirupsen/logrus"
 )
 
 type VaultInterface interface {
@@ -20,13 +20,15 @@ type Vault struct {
 	*vault.Client
 }
 
-func SetupVault(addr, token string) VaultInterface {
+func SetupVault(addr, token string, logger *logrus.Logger) VaultInterface {
 	config := vault.DefaultConfig()
 	config.Address = addr
 
 	client, err := vault.NewClient(config)
 	if err != nil {
-		log.Fatalf("Unable to initialize Vault client: %v", err)
+		logger.WithFields(logrus.Fields{
+			"error": err,
+		}).Fatal("unable to initialize Vault client")
 	}
 
 	client.SetToken(token)

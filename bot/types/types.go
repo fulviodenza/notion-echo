@@ -8,6 +8,7 @@ import (
 	"github.com/jomei/notionapi"
 	"github.com/notion-echo/adapters/db"
 	"github.com/notion-echo/adapters/vault"
+	"github.com/sirupsen/logrus"
 )
 
 type NotionDbRow struct {
@@ -40,4 +41,5 @@ type IBot interface {
 	GetUserRepo() db.UserRepoInterface
 	GetVaultClient() vault.VaultInterface
 	SetVaultClient(v vault.VaultInterface)
+	Logger() *logrus.Logger
 }

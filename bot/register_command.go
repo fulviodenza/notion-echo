@@ -9,6 +9,7 @@ import (
 	"github.com/SakoDroid/telego/v2/objects"
 	"github.com/notion-echo/bot/types"
 	"github.com/notion-echo/errors"
+	"github.com/sirupsen/logrus"
 )
 
 var _ types.ICommand = (*RegisterCommand)(nil)
@@ -29,11 +30,13 @@ func NewRegisterCommand(bot types.IBot, generateStateToken func() (string, error
 func (rc *RegisterCommand) Execute(ctx context.Context, update *objects.Update) {
 	stateToken, err := rc.generateStateToken()
 	if err != nil {
+		rc.Logger().WithFields(logrus.Fields{"error": err}).Error("register error")
 		rc.SendMessage(errors.ErrStateToken.Error(), update, false)
 		return
 	}
 	_, err = rc.GetUserRepo().SaveUser(ctx, update.Message.Chat.Id, stateToken)
 	if err != nil {
+		rc.Logger().WithFields(logrus.Fields{"error": err}).Error("register error")
 		rc.SendMessage(errors.ErrRegistering.Error(), update, false)
 		return
 	}

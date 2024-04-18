@@ -169,6 +169,33 @@ func TestDefaultPageCommandExecute(t *testing.T) {
 			},
 			false,
 		},
+		{
+			"error getting default page",
+			fields{
+				update: update(withMessage("/defaultpage test"), withId(1)),
+				envs: map[string]string{
+					"VAULT_PATH": "/localhost/test/",
+				},
+				bot: bot(withVault("/localhost/test/", "testKey"), withUserRepo(
+					&db.UserRepoMock{
+						Err: errors.New(""),
+					},
+				)),
+				pages: map[string]*notionapi.Page{
+					"test": {
+						ID:     "1",
+						Object: notionapi.ObjectTypeBlock,
+					},
+				},
+			},
+			[]string{
+				notionerrors.ErrSetDefaultPage.Error(),
+			},
+			&ent.User{
+				ID: 1,
+			},
+			false,
+		},
 	}
 
 	for _, tt := range tests {

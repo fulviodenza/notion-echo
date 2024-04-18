@@ -35,6 +35,7 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/ryanuber/go-glob v1.0.0 // indirect
+	github.com/sirupsen/logrus v1.9.3
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	golang.org/x/crypto v0.19.0 // indirect

@@ -7,14 +7,12 @@ import (
 	"encoding/base64"
 	"errors"
 	"io"
-	"log"
 	"os"
 )
 
 func Read(filename string, dst *[]byte) error {
 	f, err := os.Open(filename)
 	if err != nil {
-		log.Fatal("[parse]: ", err)
 		return err
 	}
 

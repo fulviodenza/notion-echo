@@ -2,10 +2,10 @@ package bot
 
 import (
 	"context"
-	"log"
 
 	"github.com/SakoDroid/telego/v2/objects"
 	"github.com/notion-echo/bot/types"
+	"github.com/sirupsen/logrus"
 )
 
 var _ types.ICommand = (*HelpCommand)(nil)
@@ -29,6 +29,6 @@ func (hc *HelpCommand) Execute(ctx context.Context, update *objects.Update) {
 
 	err := hc.SendMessage(helpMessage, update, true)
 	if err != nil {
-		log.Printf("Failed to send help message: %v", err)
+		hc.Logger().WithFields(logrus.Fields{"error": err}).Error("help error")
 	}
 }

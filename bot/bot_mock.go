@@ -6,8 +6,10 @@ import (
 	bt "github.com/SakoDroid/telego/v2"
 	"github.com/SakoDroid/telego/v2/objects"
 	"github.com/notion-echo/adapters/db"
+	"github.com/notion-echo/adapters/ent"
 	"github.com/notion-echo/adapters/vault"
 	"github.com/notion-echo/bot/types"
+	"github.com/sirupsen/logrus"
 )
 
 var _ types.IBot = (*MockBot)(nil)
@@ -81,7 +83,7 @@ var (
 
 var (
 	bot = func(opts ...func(*MockBot)) *MockBot {
-		bot := NewMockBot(db.NewUserRepoMock(nil))
+		bot := NewMockBot(db.NewUserRepoMock(map[int]*ent.User{}, nil))
 		for _, o := range opts {
 			o(bot)
 		}
@@ -104,3 +106,4 @@ func (b *MockBot) GetNotionClient(userId string) string             { return "" 
 func (b *MockBot) SetNotionUser(token string)                       {}
 func (b *MockBot) SetVaultClient(v vault.VaultInterface)            {}
 func (b *MockBot) GetVaultClient() vault.VaultInterface             { return b.VaultClient }
+func (b *MockBot) Logger() *logrus.Logger                           { return logrus.New() }
