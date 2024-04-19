@@ -61,8 +61,27 @@ func TestEncryptDecrypt(t *testing.T) {
 	}
 }
 
+func TestGetExt(t *testing.T) {
+	testcases := map[string]string{
+		"a.pdf":  "pdf",
+		"b.png":  "png",
+		"c.jpeg": "jpeg",
+		"d.":     "",
+		"e.jpg":  "jpg",
+		"f.g.a":  "a",
+		"":       "",
+	}
+	for testcase, want := range testcases {
+		got := GetExt(testcase)
+		if strings.Compare(got, want) != 0 {
+			t.Errorf("testcase: %s\nwant: %s, got: %s", testcase, want, got)
+		}
+	}
+}
+
 func TestAll(t *testing.T) {
 	t.Run("Read", TestRead)
 	t.Run("SplitString", TestSplitString)
 	t.Run("EncryptDecrypt", TestEncryptDecrypt)
+	t.Run("GetExt", TestGetExt)
 }

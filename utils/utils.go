@@ -81,3 +81,21 @@ func DecryptString(cryptoText string, key []byte) (string, error) {
 
 	return string(cipherText), nil
 }
+
+func GetExt(path string) string {
+	comps := strings.Split(path, ".")
+	if len(comps) == 0 || comps[0] == "" {
+		return ""
+	}
+	return comps[len(comps)-1]
+}
+
+func EscapeString(input string) string {
+	specialChars := []string{"_", "*", "[", "]", "(", ")", "~", "`", ">", "#", "+", "-", "=", "|", "{", "}", ".", "!"}
+
+	for _, char := range specialChars {
+		input = strings.ReplaceAll(input, char, "\\"+char)
+	}
+
+	return input
+}

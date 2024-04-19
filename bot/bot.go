@@ -88,6 +88,9 @@ func (b *Bot) Start(ctx context.Context) {
 	go func() {
 		for {
 			update := <-*updateCh
+			if strings.Contains(update.Message.Caption, "/note") {
+				NewNoteCommand(b, buildNotionClient)(ctx, update)
+			}
 			b.Logger().WithFields(logrus.Fields{"update_id": update.Update_id}).Info("received update")
 		}
 	}()
