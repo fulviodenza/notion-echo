@@ -7,23 +7,8 @@ import (
 	"encoding/base64"
 	"errors"
 	"io"
-	"os"
+	"strings"
 )
-
-func Read(filename string, dst *[]byte) error {
-	f, err := os.Open(filename)
-	if err != nil {
-		return err
-	}
-
-	bytes, err := io.ReadAll(f)
-	if err != nil {
-		return err
-	}
-
-	*dst = bytes
-	return nil
-}
 
 func SplitString(s string) []string {
 	if len(s) <= 0 {
