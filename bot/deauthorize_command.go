@@ -34,5 +34,5 @@ func (dc *DeauthorizeCommand) Execute(ctx context.Context, update *objects.Updat
 		dc.SendMessage(errors.ErrDeleting.Error(), id, true, true)
 		return
 	}
-	dc.SendMessage("deleted user!", id, true, true)
+	dc.SendMessage("deleted user", id, true, true)
 }

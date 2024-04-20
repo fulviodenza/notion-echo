@@ -56,7 +56,7 @@ func TestNoteCommandExecute(t *testing.T) {
 				},
 			},
 			[]string{
-				"note saved!",
+				"note saved",
 			},
 			&ent.User{
 				ID: 1,
@@ -79,7 +79,7 @@ func TestNoteCommandExecute(t *testing.T) {
 				},
 			},
 			[]string{
-				"write something in your note!",
+				"write something in your note",
 			},
 			&ent.User{
 				ID: 1,

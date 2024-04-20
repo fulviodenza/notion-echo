@@ -19,7 +19,7 @@ import (
 var _ types.ICommand = (*NoteCommand)(nil)
 
 const (
-	NOTE_SAVED = "note saved!"
+	NOTE_SAVED = "note saved"
 )
 
 var BotEmoji = notionapi.Emoji("🤖")
@@ -52,7 +52,7 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
 	}
 	noteText := strings.Replace(messageText, "/note", "", 1)
 	if noteText == "" && update.Message.Text != "" {
-		cc.SendMessage("write something in your note!", id, false, true)
+		cc.SendMessage("write something in your note", id, false, true)
 		return
 	}
 
@@ -68,7 +68,7 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
 		filePath, err = downloadAndUploadImage(cc.IBot, update.Message.Photo[0])
 	}
 	if err != nil {
-		cc.SendMessage("file error!", id, false, true)
+		cc.SendMessage("file error", id, false, true)
 		return
 	}
 	if filePath != "" {
@@ -109,7 +109,7 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
 		cc.SendMessage(errors.ErrSaveNote.Error(), id, false, true)
 		return
 	}
-	cc.SendMessage(NOTE_SAVED, id, false, true)
+	cc.SendMessage(NOTE_SAVED, id, false, false)
 }
 
 func downloadAndUploadDocument(bot types.IBot, ps *objects.Document) (string, error) {

@@ -38,7 +38,7 @@ func TestDeauthorizeCommandExecute(t *testing.T) {
 					},
 				})),
 			},
-			[]string{"deleted user!"},
+			[]string{"deleted user"},
 			false,
 		},
 		{

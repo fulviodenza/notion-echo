@@ -17,7 +17,7 @@ import (
 )
 
 func TestDefaultPageCommandExecute(t *testing.T) {
-	successResp := "page test set as default!"
+	successResp := "page test set as default"
 	selectPageResp := "please, select a page"
 
 	type fields struct {

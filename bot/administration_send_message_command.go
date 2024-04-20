@@ -42,11 +42,11 @@ func (sa *SendAllCommand) Execute(ctx context.Context, update *objects.Update) {
 
 	sendText := strings.Replace(update.Message.Text, "/send_all", "", 1)
 	if sendText == "" && update.Message.Text != "" {
-		sa.SendMessage("write something in your send_all message!", id, false, true)
+		sa.SendMessage("write something in your send_all message", id, false, true)
 		return
 	}
 	for _, u := range users {
 		sa.SendMessage(sendText, u.ID, true, true)
 	}
-	sa.SendMessage("message sent to all!", id, false, true)
+	sa.SendMessage("message sent to all", id, false, true)
 }
