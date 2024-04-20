@@ -38,6 +38,7 @@ const (
 	COMMAND_DEFAULT_PAGE     = "/defaultpage"
 	COMMAND_DEAUTHORIZE      = "/deauthorize"
 	COMMAND_GET_DEFAULT_PAGE = "/getdefaultpage"
+	COMMAND_SEND_ALL         = "/send_all"
 )
 
 const (

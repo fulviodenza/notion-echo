@@ -265,6 +265,8 @@ func (b *Bot) initializeHandlers() map[string]func(ctx context.Context, up *objs
 		utils.COMMAND_DEFAULT_PAGE:     NewDefaultPageCommand(b, buildNotionClient),
 		utils.COMMAND_GET_DEFAULT_PAGE: NewGetDefaultPageCommand(b),
 		utils.COMMAND_DEAUTHORIZE:      NewDeauthorizeCommand(b),
+		// admin command
+		utils.COMMAND_SEND_ALL: NewSendAllCommand(b),
 	}
 }
 
