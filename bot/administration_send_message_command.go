@@ -46,7 +46,7 @@ func (sa *SendAllCommand) Execute(ctx context.Context, update *objects.Update) {
 		return
 	}
 	for _, u := range users {
-		sa.SendMessage("New features introduced!:", u.ID, true)
+		sa.SendMessage(sendText, u.ID, true)
 	}
 	sa.SendMessage("message sent to all!", id, false)
 }
