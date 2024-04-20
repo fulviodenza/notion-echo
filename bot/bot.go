@@ -212,7 +212,7 @@ func (b *Bot) SendMessage(msg string, chatId int, formatMarkdown bool) error {
 }
 
 func (b *Bot) loadHelpMessage() {
-	b.helpMessage = utils.EscapeString(utils.HELP_STRING)
+	b.helpMessage = utils.HELP_STRING
 }
 
 func (b *Bot) SetTelegramClient(bot bt.Bot) {
