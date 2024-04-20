@@ -35,8 +35,8 @@ func (dc *GetDefaultPageCommand) Execute(ctx context.Context, update *objects.Up
 		dc.Logger().WithFields(logrus.Fields{"error": err}).Error("default page error")
 	}
 	if err != nil || defaultPage == "" {
-		dc.SendMessage(errors.ErrPageNotFound.Error(), id, false)
+		dc.SendMessage(errors.ErrPageNotFound.Error(), id, false, true)
 		return
 	}
-	dc.SendMessage(fmt.Sprintf("your default page is **%s**", defaultPage), id, true)
+	dc.SendMessage(fmt.Sprintf("your default page is **%s**", defaultPage), id, true, true)
 }

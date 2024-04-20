@@ -185,8 +185,10 @@ func (b *Bot) GetNotionClient(userId string) string {
 	return b.NotionClient[userId]
 }
 
-func (b *Bot) SendMessage(msg string, chatId int, formatMarkdown bool) error {
-	msg = utils.EscapeString(msg)
+func (b *Bot) SendMessage(msg string, chatId int, formatMarkdown bool, escape bool) error {
+	if escape {
+		msg = utils.EscapeString(msg)
+	}
 	parseMode := ""
 	if formatMarkdown {
 		parseMode = "MarkdownV2"

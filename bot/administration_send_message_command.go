@@ -36,17 +36,17 @@ func (sa *SendAllCommand) Execute(ctx context.Context, update *objects.Update) {
 	users, err := sa.GetUserRepo().GetAllUsers(ctx)
 	if err != nil {
 		sa.Logger().WithFields(logrus.Fields{"error": err}).Error("send all")
-		sa.SendMessage(errors.ErrDeleting.Error(), id, true)
+		sa.SendMessage(errors.ErrDeleting.Error(), id, true, true)
 		return
 	}
 
 	sendText := strings.Replace(update.Message.Text, "/send_all", "", 1)
 	if sendText == "" && update.Message.Text != "" {
-		sa.SendMessage("write something in your send_all message!", id, false)
+		sa.SendMessage("write something in your send_all message!", id, false, true)
 		return
 	}
 	for _, u := range users {
-		sa.SendMessage(sendText, u.ID, true)
+		sa.SendMessage(sendText, u.ID, true, true)
 	}
-	sa.SendMessage("message sent to all!", id, false)
+	sa.SendMessage("message sent to all!", id, false, true)
 }

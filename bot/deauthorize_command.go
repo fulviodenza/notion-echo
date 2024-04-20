@@ -31,8 +31,8 @@ func (dc *DeauthorizeCommand) Execute(ctx context.Context, update *objects.Updat
 	err := dc.GetUserRepo().DeleteUser(ctx, id)
 	if err != nil {
 		dc.Logger().WithFields(logrus.Fields{"error": err}).Error("deauthorize error")
-		dc.SendMessage(errors.ErrDeleting.Error(), id, true)
+		dc.SendMessage(errors.ErrDeleting.Error(), id, true, true)
 		return
 	}
-	dc.SendMessage("deleted user!", id, true)
+	dc.SendMessage("deleted user!", id, true, true)
 }

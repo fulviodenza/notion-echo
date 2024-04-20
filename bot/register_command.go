@@ -33,17 +33,17 @@ func (rc *RegisterCommand) Execute(ctx context.Context, update *objects.Update) 
 	stateToken, err := rc.generateStateToken()
 	if err != nil {
 		rc.Logger().WithFields(logrus.Fields{"error": err}).Error("register error")
-		rc.SendMessage(errors.ErrStateToken.Error(), id, false)
+		rc.SendMessage(errors.ErrStateToken.Error(), id, false, true)
 		return
 	}
 	_, err = rc.GetUserRepo().SaveUser(ctx, update.Message.Chat.Id, stateToken)
 	if err != nil {
 		rc.Logger().WithFields(logrus.Fields{"error": err}).Error("register error")
-		rc.SendMessage(errors.ErrRegistering.Error(), id, false)
+		rc.SendMessage(errors.ErrRegistering.Error(), id, false, true)
 		return
 	}
 	oauthURL := fmt.Sprintf("%s&state=%s", os.Getenv("OAUTH_URL"), url.QueryEscape(stateToken))
-	rc.SendMessage("click on the following URL, authorize pages", id, false)
-	rc.SendMessage(oauthURL, id, false)
-	rc.SendMessage("when you have done with registration, select a default page using command `/defaultpage page`", id, true)
+	rc.SendMessage("click on the following URL, authorize pages", id, false, true)
+	rc.SendMessage(oauthURL, id, false, false)
+	rc.SendMessage("when you have done with registration, select a default page using command `/defaultpage page`", id, true, true)
 }

@@ -30,7 +30,7 @@ type ICommand interface {
 // Getters and Setters methods Bot instances
 type IBot interface {
 	Start(ctx context.Context)
-	SendMessage(msg string, chatId int, formatMarkdown bool) error
+	SendMessage(msg string, chatId int, formatMarkdown bool, escape bool) error
 	GetHelpMessage() string
 	SetTelegramClient(bot bt.Bot)
 	GetTelegramClient() *bt.Bot

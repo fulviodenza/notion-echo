@@ -27,7 +27,7 @@ func (hc *HelpCommand) Execute(ctx context.Context, update *objects.Update) {
 	}
 	helpMessage := hc.GetHelpMessage()
 
-	err := hc.SendMessage(helpMessage, update.Message.Chat.Id, true)
+	err := hc.SendMessage(helpMessage, update.Message.Chat.Id, true, true)
 	if err != nil {
 		hc.Logger().WithFields(logrus.Fields{"error": err}).Error("help error")
 	}
