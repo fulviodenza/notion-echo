@@ -17,7 +17,7 @@ type SendAllCommand struct {
 }
 
 func NewSendAllCommand(bot types.IBot) types.Command {
-	hc := DeauthorizeCommand{
+	hc := SendAllCommand{
 		IBot: bot,
 	}
 	return hc.Execute
