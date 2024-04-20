@@ -74,5 +74,5 @@ func (dc *DefaultPageCommand) Execute(ctx context.Context, update *objects.Updat
 		dc.SendMessage(errors.ErrSetDefaultPage.Error(), id, false, true)
 		return
 	}
-	dc.SendMessage(fmt.Sprintf("page %s set as default!", selectedPage), id, false, true)
+	dc.SendMessage(fmt.Sprintf("page %s set as default", selectedPage), id, false, true)
 }
