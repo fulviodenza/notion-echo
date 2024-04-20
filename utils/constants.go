@@ -20,7 +20,7 @@ Here is how to get started:
 	
 - /help - Displays this help message;
 - /register - Register your Notion notebook in the bot;
-- /note text - Write the text of the note or upload a pdf, jpg, jpeg or png (__if it's an image__, please ensure to send it __without compression__ or it will upload a blurred image on notion) on Notion;
+- /note text - Write the text of the note or upload a pdf, jpg, jpeg or png (if it's an image, please ensure to send it without compression or it will upload a blurred image on notion) on Notion;
 - /defaultpage page_name - Sets the default Notion page for your notes. Ensure this is an authorized page during registration;
 - /getdefaultpage - Get default page for your user;
 - /deauthorize - I will forget you;
