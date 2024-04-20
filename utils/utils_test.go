@@ -2,27 +2,11 @@ package utils
 
 import (
 	"crypto/aes"
-	"os"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 )
-
-func TestRead(t *testing.T) {
-	filename := "testfile.txt"
-	content := []byte("hello world")
-	os.WriteFile(filename, content, 0644)
-	defer os.Remove(filename)
-
-	var dst []byte
-	err := Read(filename, &dst)
-	if err != nil {
-		t.Fatalf("Read failed: %v", err)
-	}
-	if diff := cmp.Diff(dst, content); diff != "" {
-		t.Errorf("Expected %v, got %v", content, dst)
-	}
-}
 
 func TestSplitString(t *testing.T) {
 	tests := []struct {
@@ -61,8 +45,39 @@ func TestEncryptDecrypt(t *testing.T) {
 	}
 }
 
+func TestGetExt(t *testing.T) {
+	testcases := map[string]string{
+		"a.pdf":  "pdf",
+		"b.png":  "png",
+		"c.jpeg": "jpeg",
+		"d.":     "",
+		"e.jpg":  "jpg",
+		"f.g.a":  "a",
+		"":       "",
+	}
+	for testcase, want := range testcases {
+		got := GetExt(testcase)
+		if strings.Compare(got, want) != 0 {
+			t.Errorf("testcase: %s\nwant: %s, got: %s", testcase, want, got)
+		}
+	}
+}
+
+func TestEscapeString(t *testing.T) {
+	testcases := map[string]string{
+		"a.b": "a\\.b",
+	}
+	for testcase, want := range testcases {
+		got := EscapeString(testcase)
+		if strings.Compare(got, want) != 0 {
+			t.Errorf("testcase: %s\nwant: %s, got: %s", testcase, want, got)
+		}
+	}
+}
+
 func TestAll(t *testing.T) {
-	t.Run("Read", TestRead)
 	t.Run("SplitString", TestSplitString)
 	t.Run("EncryptDecrypt", TestEncryptDecrypt)
+	t.Run("GetExt", TestGetExt)
+	t.Run("EscapeString", TestEscapeString)
 }

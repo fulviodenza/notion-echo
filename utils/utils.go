@@ -7,23 +7,8 @@ import (
 	"encoding/base64"
 	"errors"
 	"io"
-	"os"
+	"strings"
 )
-
-func Read(filename string, dst *[]byte) error {
-	f, err := os.Open(filename)
-	if err != nil {
-		return err
-	}
-
-	bytes, err := io.ReadAll(f)
-	if err != nil {
-		return err
-	}
-
-	*dst = bytes
-	return nil
-}
 
 func SplitString(s string) []string {
 	if len(s) <= 0 {
@@ -80,4 +65,22 @@ func DecryptString(cryptoText string, key []byte) (string, error) {
 	stream.XORKeyStream(cipherText, cipherText)
 
 	return string(cipherText), nil
+}
+
+func GetExt(path string) string {
+	comps := strings.Split(path, ".")
+	if len(comps) == 0 || comps[0] == "" {
+		return ""
+	}
+	return comps[len(comps)-1]
+}
+
+func EscapeString(input string) string {
+	specialChars := []string{"_", "*", "[", "]", "(", ")", "~", "`", ">", "#", "+", "-", "=", "|", "{", "}", ".", "!"}
+
+	for _, char := range specialChars {
+		input = strings.ReplaceAll(input, char, "\\"+char)
+	}
+
+	return input
 }

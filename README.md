@@ -22,10 +22,12 @@ Say goodbye to switching apps or losing thoughts in the shuffle—Notion-Echo Bo
 
 - `/help` - Displays this help message;
 - `/register` - Register your Notion notebook in the bot;
-- `/note [text]` - Write the text of the note on Notion;
+- `/note [text]` - Write the text of the note on Notion or save the file*;
 - `/defaultpage [page_name]` - Sets the default Notion page for your notes. Ensure this is an authorized page during registration;
 - `/getdefaultpage` - Get default page for your user.
 - `/deauthorize` - I will forget you
+
+*: Please note that so far only **pdf, jpg, jpeg and png** are able to be uploaded into your page, also, if you are **uploading a picture**, you should upload it **without compression**
 
 ## Why Use notion-echo Bot?
 
@@ -46,4 +48,3 @@ We welcome contributions of all kinds from the community. If you're interested i
 ## Known issues
 - use buttons to create a flow
 - transcribe markdown
-- currently, the bot does not allow image upload, for more informations look at: https://github.com/SakoDroid/telego/issues/19

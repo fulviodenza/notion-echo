@@ -88,6 +88,9 @@ func (b *Bot) Start(ctx context.Context) {
 	go func() {
 		for {
 			update := <-*updateCh
+			if strings.Contains(update.Message.Caption, "/note") {
+				NewNoteCommand(b, buildNotionClient)(ctx, update)
+			}
 			b.Logger().WithFields(logrus.Fields{"update_id": update.Update_id}).Info("received update")
 		}
 	}()
@@ -185,7 +188,7 @@ func (b *Bot) GetNotionClient(userId string) string {
 func (b *Bot) SendMessage(msg string, up *objs.Update, formatMarkdown bool) error {
 	parseMode := ""
 	if formatMarkdown {
-		parseMode = "Markdown"
+		parseMode = "MarkdownV2"
 	}
 
 	if len(msg) >= utils.MAX_LEN_MESSAGE {
@@ -208,12 +211,7 @@ func (b *Bot) SendMessage(msg string, up *objs.Update, formatMarkdown bool) erro
 }
 
 func (b *Bot) loadHelpMessage() {
-	helpMessage := make([]byte, 0)
-	err := utils.Read(utils.HELP_MESSAGE_ASSET, &helpMessage)
-	if err != nil {
-		b.Logger().WithFields(logrus.Fields{"error": err}).Fatal("failed to load help message")
-	}
-	b.helpMessage = string(helpMessage)
+	b.helpMessage = utils.EscapeString(utils.HELP_STRING)
 }
 
 func (b *Bot) SetTelegramClient(bot bt.Bot) {
