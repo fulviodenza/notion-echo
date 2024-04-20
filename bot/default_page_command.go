@@ -34,27 +34,29 @@ func (dc *DefaultPageCommand) Execute(ctx context.Context, update *objects.Updat
 		return
 	}
 
+	id := update.Message.Chat.Id
+
 	encKey, err := dc.GetVaultClient().GetKey(os.Getenv("VAULT_PATH"))
 	if err != nil {
 		dc.Logger().WithFields(logrus.Fields{"error": err}).Error("default page error")
-		dc.SendMessage(errors.ErrNotRegistered.Error(), update, false)
+		dc.SendMessage(errors.ErrNotRegistered.Error(), id, false)
 		return
 	}
 	notionClient, err := dc.buildNotionClient(ctx, dc.GetUserRepo(), update.Message.Chat.Id, encKey)
 	if err != nil {
 		dc.Logger().WithFields(logrus.Fields{"error": err}).Error("default page error")
-		dc.SendMessage(errors.ErrSetDefaultPage.Error(), update, false)
+		dc.SendMessage(errors.ErrSetDefaultPage.Error(), id, false)
 		return
 	}
 
 	selectedPages := strings.Split(update.Message.Text, " ")
 	selectedPage := ""
 	if len(selectedPages) == 1 {
-		dc.SendMessage("please, select a page", update, false)
+		dc.SendMessage("please, select a page", id, false)
 		return
 	}
 	if len(selectedPages) > 2 {
-		dc.SendMessage(fmt.Sprintf("ignoring %v", selectedPages[2:]), update, false)
+		dc.SendMessage(fmt.Sprintf("ignoring %v", selectedPages[2:]), id, false)
 	}
 	selectedPage = selectedPages[1]
 
@@ -63,14 +65,14 @@ func (dc *DefaultPageCommand) Execute(ctx context.Context, update *objects.Updat
 		if err != nil {
 			dc.Logger().WithFields(logrus.Fields{"error": err}).Error("default page error")
 		}
-		dc.SendMessage(errors.ErrPageNotFound.Error(), update, false)
+		dc.SendMessage(errors.ErrPageNotFound.Error(), id, false)
 		return
 	}
 	err = dc.GetUserRepo().SetDefaultPage(ctx, update.Message.Chat.Id, selectedPage)
 	if err != nil {
 		dc.Logger().WithFields(logrus.Fields{"error": err}).Error("default page error")
-		dc.SendMessage(errors.ErrSetDefaultPage.Error(), update, false)
+		dc.SendMessage(errors.ErrSetDefaultPage.Error(), id, false)
 		return
 	}
-	dc.SendMessage(fmt.Sprintf("page %s set as default!", selectedPage), update, false)
+	dc.SendMessage(fmt.Sprintf("page %s set as default!", selectedPage), id, false)
 }

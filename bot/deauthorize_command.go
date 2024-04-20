@@ -27,11 +27,12 @@ func (dc *DeauthorizeCommand) Execute(ctx context.Context, update *objects.Updat
 		return
 	}
 
-	err := dc.GetUserRepo().DeleteUser(ctx, update.Message.Chat.Id)
+	id := update.Message.Chat.Id
+	err := dc.GetUserRepo().DeleteUser(ctx, id)
 	if err != nil {
 		dc.Logger().WithFields(logrus.Fields{"error": err}).Error("deauthorize error")
-		dc.SendMessage(errors.ErrDeleting.Error(), update, true)
+		dc.SendMessage(errors.ErrDeleting.Error(), id, true)
 		return
 	}
-	dc.SendMessage("deleted user!", update, true)
+	dc.SendMessage("deleted user!", id, true)
 }

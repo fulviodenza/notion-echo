@@ -52,7 +52,7 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
 	}
 	noteText := strings.Replace(messageText, "/note", "", 1)
 	if noteText == "" && update.Message.Text != "" {
-		cc.SendMessage("write something in your note!", update, false)
+		cc.SendMessage("write something in your note!", id, false)
 		return
 	}
 
@@ -64,11 +64,11 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
 	}
 	if update.Message.Photo != nil {
 		cc.SendMessage(`ensure your photo is sent without compression!, 
-			I will save it for you but you could have issues in visualizing it`, update, false)
+			I will save it for you but you could have issues in visualizing it`, id, false)
 		filePath, err = downloadAndUploadImage(cc.IBot, update.Message.Photo[0])
 	}
 	if err != nil {
-		cc.SendMessage("file error!", update, false)
+		cc.SendMessage("file error!", id, false)
 		return
 	}
 	if filePath != "" {
@@ -80,13 +80,13 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
 	encKey, err := cc.GetVaultClient().GetKey(os.Getenv("VAULT_PATH"))
 	if err != nil {
 		cc.Logger().WithFields(logrus.Fields{"error": err}).Error("note error")
-		cc.SendMessage(errors.ErrInternal.Error(), update, false)
+		cc.SendMessage(errors.ErrInternal.Error(), id, false)
 		return
 	}
 	notionClient, err := cc.buildNotionClient(ctx, cc.GetUserRepo(), id, encKey)
 	if err != nil {
 		cc.Logger().WithFields(logrus.Fields{"error": err}).Error("note error")
-		cc.SendMessage(errors.ErrNotRegistered.Error(), update, false)
+		cc.SendMessage(errors.ErrNotRegistered.Error(), id, false)
 		return
 	}
 	defaultPage, err := cc.GetUserRepo().GetDefaultPage(ctx, id)
@@ -94,22 +94,22 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
 		cc.Logger().WithFields(logrus.Fields{"error": err}).Error("note error")
 	}
 	if err != nil || defaultPage == "" {
-		cc.SendMessage(errors.ErrPageNotFound.Error(), update, false)
+		cc.SendMessage(errors.ErrPageNotFound.Error(), id, false)
 		return
 	}
 	page, err := notionClient.SearchPage(ctx, defaultPage)
 	if err != nil {
 		cc.Logger().WithFields(logrus.Fields{"error": err}).Error("note error")
-		cc.SendMessage(errors.ErrPageNotFound.Error(), update, false)
+		cc.SendMessage(errors.ErrPageNotFound.Error(), id, false)
 		return
 	}
 	_, err = notionClient.Block().AppendChildren(ctx, notionapi.BlockID(page.ID), blocks)
 	if err != nil {
 		cc.Logger().WithFields(logrus.Fields{"error": err}).Error("note error")
-		cc.SendMessage(errors.ErrSaveNote.Error(), update, false)
+		cc.SendMessage(errors.ErrSaveNote.Error(), id, false)
 		return
 	}
-	cc.SendMessage(NOTE_SAVED, update, false)
+	cc.SendMessage(NOTE_SAVED, id, false)
 }
 
 func downloadAndUploadDocument(bot types.IBot, ps *objects.Document) (string, error) {

@@ -27,7 +27,7 @@ func NewMockBot(usersDb db.UserRepoInterface) *MockBot {
 	}
 }
 
-func (b *MockBot) SendMessage(msg string, up *objects.Update, formatMarkdown bool) error {
+func (b *MockBot) SendMessage(msg string, chatId int, formatMarkdown bool) error {
 	if b.Err != nil {
 		return b.Err
 	}

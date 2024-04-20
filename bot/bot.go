@@ -185,7 +185,7 @@ func (b *Bot) GetNotionClient(userId string) string {
 	return b.NotionClient[userId]
 }
 
-func (b *Bot) SendMessage(msg string, up *objs.Update, formatMarkdown bool) error {
+func (b *Bot) SendMessage(msg string, chatId int, formatMarkdown bool) error {
 	parseMode := ""
 	if formatMarkdown {
 		parseMode = "MarkdownV2"
@@ -194,14 +194,14 @@ func (b *Bot) SendMessage(msg string, up *objs.Update, formatMarkdown bool) erro
 	if len(msg) >= utils.MAX_LEN_MESSAGE {
 		msgs := utils.SplitString(msg)
 		for _, m := range msgs {
-			_, err := b.TelegramClient.SendMessage(up.Message.Chat.Id, m, parseMode, 0, false, false)
+			_, err := b.TelegramClient.SendMessage(chatId, m, parseMode, 0, false, false)
 			if err != nil {
 				b.Logger().WithFields(logrus.Fields{"error": err}).Error("failed to send message")
 				return err
 			}
 		}
 	} else {
-		_, err := b.TelegramClient.SendMessage(up.Message.Chat.Id, msg, parseMode, 0, false, false)
+		_, err := b.TelegramClient.SendMessage(chatId, msg, parseMode, 0, false, false)
 		if err != nil {
 			b.Logger().WithFields(logrus.Fields{"error": err}).Error("failed to send message")
 			return err

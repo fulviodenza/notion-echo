@@ -45,6 +45,17 @@ func (ur *UserRepoMock) GetStateTokenById(ctx context.Context, id int) (*ent.Use
 	return u, nil
 }
 
+func (ur *UserRepoMock) GetAllUsers(ctx context.Context) ([]*ent.User, error) {
+	if ur.Err != nil {
+		return nil, ur.Err
+	}
+	users := make([]*ent.User, 0)
+	for _, v := range ur.Db {
+		users = append(users, v)
+	}
+	return users, nil
+}
+
 func (ur *UserRepoMock) SaveNotionTokenByStateToken(ctx context.Context, notionToken, stateToken string) (*ent.User, error) {
 	return nil, nil
 }

@@ -18,6 +18,7 @@ type UserRepoInterface interface {
 	SetDefaultPage(ctx context.Context, id int, page string) error
 	GetDefaultPage(ctx context.Context, id int) (string, error)
 	DeleteUser(ctx context.Context, id int) error
+	GetAllUsers(ctx context.Context) ([]*ent.User, error)
 }
 
 var _ UserRepoInterface = (*UserRepo)(nil)
@@ -50,6 +51,10 @@ func (ur *UserRepo) SaveUser(ctx context.Context, id int, stateToken string) (*e
 	}
 
 	return u, nil
+}
+
+func (ur *UserRepo) GetAllUsers(ctx context.Context) ([]*ent.User, error) {
+	return ur.User.Query().All(ctx)
 }
 
 func (ur *UserRepo) GetStateTokenById(ctx context.Context, id int) (*ent.User, error) {

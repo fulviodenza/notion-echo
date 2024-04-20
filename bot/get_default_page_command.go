@@ -27,13 +27,16 @@ func (dc *GetDefaultPageCommand) Execute(ctx context.Context, update *objects.Up
 	if dc == nil || dc.IBot == nil {
 		return
 	}
+
+	id := update.Message.Chat.Id
+
 	defaultPage, err := dc.GetUserRepo().GetDefaultPage(ctx, update.Message.Chat.Id)
 	if err != nil {
 		dc.Logger().WithFields(logrus.Fields{"error": err}).Error("default page error")
 	}
 	if err != nil || defaultPage == "" {
-		dc.SendMessage(errors.ErrPageNotFound.Error(), update, false)
+		dc.SendMessage(errors.ErrPageNotFound.Error(), id, false)
 		return
 	}
-	dc.SendMessage(fmt.Sprintf("your default page is **%s**", defaultPage), update, true)
+	dc.SendMessage(fmt.Sprintf("your default page is **%s**", defaultPage), id, true)
 }

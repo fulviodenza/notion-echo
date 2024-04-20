@@ -28,20 +28,22 @@ func NewRegisterCommand(bot types.IBot, generateStateToken func() (string, error
 }
 
 func (rc *RegisterCommand) Execute(ctx context.Context, update *objects.Update) {
+	id := update.Message.Chat.Id
+
 	stateToken, err := rc.generateStateToken()
 	if err != nil {
 		rc.Logger().WithFields(logrus.Fields{"error": err}).Error("register error")
-		rc.SendMessage(errors.ErrStateToken.Error(), update, false)
+		rc.SendMessage(errors.ErrStateToken.Error(), id, false)
 		return
 	}
 	_, err = rc.GetUserRepo().SaveUser(ctx, update.Message.Chat.Id, stateToken)
 	if err != nil {
 		rc.Logger().WithFields(logrus.Fields{"error": err}).Error("register error")
-		rc.SendMessage(errors.ErrRegistering.Error(), update, false)
+		rc.SendMessage(errors.ErrRegistering.Error(), id, false)
 		return
 	}
 	oauthURL := fmt.Sprintf("%s&state=%s", os.Getenv("OAUTH_URL"), url.QueryEscape(stateToken))
-	rc.SendMessage("click on the following URL, authorize pages", update, false)
-	rc.SendMessage(oauthURL, update, false)
-	rc.SendMessage("when you have done with registration, select a default page using command `/defaultpage page`", update, true)
+	rc.SendMessage("click on the following URL, authorize pages", id, false)
+	rc.SendMessage(oauthURL, id, false)
+	rc.SendMessage("when you have done with registration, select a default page using command `/defaultpage page`", id, true)
 }
