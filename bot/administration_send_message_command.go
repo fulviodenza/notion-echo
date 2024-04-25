@@ -2,6 +2,8 @@ package bot
 
 import (
 	"context"
+	"os"
+	"strconv"
 	"strings"
 
 	"github.com/SakoDroid/telego/v2/objects"
@@ -27,10 +29,15 @@ func (sa *SendAllCommand) Execute(ctx context.Context, update *objects.Update) {
 	if sa == nil || sa.IBot == nil {
 		return
 	}
-
 	id := update.Message.Chat.Id
 
-	if id != 259943644 {
+	tg_id, err := strconv.Atoi(os.Getenv("TG_ID"))
+	if err != nil {
+		sa.Logger().WithFields(logrus.Fields{"error": err}).Error("send all")
+		sa.SendMessage(errors.ErrDeleting.Error(), id, true, true)
+		return
+	}
+	if id != tg_id {
 		return
 	}
 	users, err := sa.GetUserRepo().GetAllUsers(ctx)
