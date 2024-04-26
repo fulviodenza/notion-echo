@@ -181,8 +181,8 @@ func buildPdfBlock(path string) *notionapi.PdfBlock {
 			Type:   notionapi.BlockTypePdf,
 		},
 		Pdf: notionapi.Pdf{
-			Type: "file",
-			File: &notionapi.FileObject{
+			Type: "external",
+			External: &notionapi.FileObject{
 				URL: url,
 			},
 		},
@@ -198,8 +198,8 @@ func buildImageBlock(path string) *notionapi.ImageBlock {
 			Type:   notionapi.BlockTypeImage,
 		},
 		Image: notionapi.Image{
-			Type: "file",
-			File: &notionapi.FileObject{
+			Type: "external",
+			External: &notionapi.FileObject{
 				URL: url,
 			},
 		},
