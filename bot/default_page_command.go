@@ -52,7 +52,7 @@ func (dc *DefaultPageCommand) Execute(ctx context.Context, update *objects.Updat
 	selectedPages := strings.Split(update.Message.Text, " ")
 	selectedPage := ""
 	if len(selectedPages) == 1 {
-		dc.SendMessage("please, select a page", id, false, true)
+		dc.SendMessage("defaultpage command requires a parameter, usage: `/defaultpage yourpage`", id, false, true)
 		return
 	}
 	if len(selectedPages) > 2 {
