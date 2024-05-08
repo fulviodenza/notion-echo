@@ -88,6 +88,9 @@ func (b *Bot) Start(ctx context.Context) {
 	go func() {
 		for {
 			update := <-*updateCh
+			if update != nil {
+				continue
+			}
 			if strings.Contains(update.Message.Caption, "/note") {
 				NewNoteCommand(b, buildNotionClient)(ctx, update)
 			}
