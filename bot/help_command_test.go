@@ -5,7 +5,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/SakoDroid/telego/v2/objects"
+	"github.com/fulviodenza/telego/v2/objects"
 	"github.com/google/go-cmp/cmp"
 	"github.com/notion-echo/adapters/ent"
 )

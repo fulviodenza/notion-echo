@@ -3,8 +3,8 @@ package bot
 import (
 	"context"
 
-	bt "github.com/SakoDroid/telego/v2"
-	"github.com/SakoDroid/telego/v2/objects"
+	bt "github.com/fulviodenza/telego/v2"
+	"github.com/fulviodenza/telego/v2/objects"
 	"github.com/notion-echo/adapters/db"
 	"github.com/notion-echo/adapters/ent"
 	"github.com/notion-echo/adapters/vault"

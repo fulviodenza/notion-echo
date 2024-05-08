@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/SakoDroid/telego/v2/objects"
+	"github.com/fulviodenza/telego/v2/objects"
 	"github.com/notion-echo/bot/types"
 	"github.com/notion-echo/errors"
 	"github.com/sirupsen/logrus"

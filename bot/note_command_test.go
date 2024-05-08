@@ -8,7 +8,7 @@ import (
 
 	"errors"
 
-	"github.com/SakoDroid/telego/v2/objects"
+	"github.com/fulviodenza/telego/v2/objects"
 	"github.com/google/go-cmp/cmp"
 	"github.com/jomei/notionapi"
 	"github.com/notion-echo/adapters/db"

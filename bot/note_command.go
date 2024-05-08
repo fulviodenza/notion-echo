@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/SakoDroid/telego/v2/objects"
+	"github.com/fulviodenza/telego/v2/objects"
 	"github.com/jomei/notionapi"
 	"github.com/notion-echo/adapters/db"
 	"github.com/notion-echo/adapters/notion"

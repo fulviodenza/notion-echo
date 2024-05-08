@@ -3,8 +3,8 @@ package types
 import (
 	"context"
 
-	bt "github.com/SakoDroid/telego/v2"
-	objs "github.com/SakoDroid/telego/v2/objects"
+	bt "github.com/fulviodenza/telego/v2"
+	objs "github.com/fulviodenza/telego/v2/objects"
 	"github.com/jomei/notionapi"
 	"github.com/notion-echo/adapters/db"
 	"github.com/notion-echo/adapters/vault"
