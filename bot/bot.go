@@ -88,7 +88,7 @@ func (b *Bot) Start(ctx context.Context) {
 	go func() {
 		for {
 			update := <-*updateCh
-			if update == nil {
+			if update == nil || update.Message == nil {
 				continue
 			}
 			if strings.Contains(update.Message.Caption, "/note") {
