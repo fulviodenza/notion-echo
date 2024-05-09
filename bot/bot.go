@@ -19,9 +19,9 @@ import (
 	"github.com/notion-echo/utils"
 	"github.com/sirupsen/logrus"
 
-	bt "github.com/fulviodenza/telego/v2"
-	cfg "github.com/fulviodenza/telego/v2/configs"
-	objs "github.com/fulviodenza/telego/v2/objects"
+	bt "github.com/SakoDroid/telego/v2"
+	cfg "github.com/SakoDroid/telego/v2/configs"
+	objs "github.com/SakoDroid/telego/v2/objects"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 )

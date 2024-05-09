@@ -3,7 +3,7 @@ module github.com/notion-echo
 go 1.21
 
 require (
-	github.com/fulviodenza/telego/v2 v2.0.3
+	github.com/SakoDroid/telego/v2 v2.2.0
 	github.com/google/go-cmp v0.6.0
 	github.com/hashicorp/vault/api v1.12.2
 	github.com/jackc/pgx/v5 v5.5.5
