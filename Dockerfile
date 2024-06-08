@@ -4,6 +4,7 @@ FROM golang:1.21 as builder
 WORKDIR /app
 ADD . /app
 
+RUN go mod tidy && go mod vendor
 RUN go build -o /notion-echo
 COPY run.sh /run.sh
 RUN chmod +x /run.sh
