@@ -45,6 +45,15 @@ For more information and updates, follow us on [GitHub](https://github.com/fulvi
 
 We welcome contributions of all kinds from the community. If you're interested in helping improve notion-echo Bot.
 
+## Next features
+- Buttons with flows
+- Storage not depending on telegram but relying on ourself, so that the issue for docs visualization in notion is not broken
+- Monitoring (Prometheus)
+- Send commands and arguments in different messages
+- Switch default pages
+- Create a default page if unset into the Database
+- Save new notes formats
+  
 ## Known issues
 - use buttons to create a flow
 - transcribe markdown
