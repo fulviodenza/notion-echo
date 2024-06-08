@@ -3,3 +3,4 @@ vendor
 .vscode
 certs
 coverage.out
+*.log
