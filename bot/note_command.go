@@ -43,6 +43,7 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
 	}
 
 	id := update.Message.Chat.Id
+	cc.Logger().Infof("[NoteCommand] got note from %d", id)
 
 	blocks := &notionapi.AppendBlockChildrenRequest{}
 
@@ -68,6 +69,7 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
 		filePath, err = downloadAndUploadImage(cc.IBot, update.Message.Photo[0])
 	}
 	if err != nil {
+		cc.Logger().WithFields(logrus.Fields{"error": err}).Error("note error")
 		cc.SendMessage("file error", id, false, true)
 		return
 	}

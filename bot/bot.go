@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"encoding/base64"
@@ -9,6 +10,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/jomei/notionapi"
 	"github.com/notion-echo/adapters/db"
@@ -22,6 +24,10 @@ import (
 	bt "github.com/SakoDroid/telego/v2"
 	cfg "github.com/SakoDroid/telego/v2/configs"
 	objs "github.com/SakoDroid/telego/v2/objects"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 )
@@ -32,6 +38,7 @@ type Bot struct {
 	NotionClient   map[string]string
 	UserRepo       db.UserRepoInterface
 	VaultClient    vaultadapter.VaultInterface
+	S3Client       *s3.Client
 	helpMessage    string
 	logger         *logrus.Logger
 }
@@ -48,6 +55,10 @@ var (
 	vaultSecretKey  = os.Getenv(utils.VAULT_SECRET_KEY)
 	vaultToken      = os.Getenv(utils.VAULT_TOKEN)
 	port            = os.Getenv(utils.PORT)
+	bucketName      = os.Getenv(utils.BUCKET_NAME)
+	bucketAccountId = os.Getenv(utils.BUCKET_ACCOUNT_ID)
+	bucketAccessKey = os.Getenv(utils.BUCKET_ACCESS_KEY)
+	bucketSecretKey = os.Getenv(utils.BUCKET_SECRET_KEY)
 )
 
 func NewBotWithConfig() (*Bot, error) {
@@ -55,6 +66,17 @@ func NewBotWithConfig() (*Bot, error) {
 		logger: logrus.New(),
 	}
 	bot.Logger().SetFormatter(&logrus.JSONFormatter{})
+
+	err := bot.setupBucket()
+	if err != nil {
+		fmt.Println("got error:", err)
+	}
+	logFileName := fmt.Sprintf("logs-%s.log", time.Now().Format("2006-01-02"))
+	logFile, err := os.OpenFile(logFileName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open log file: %v", err)
+	}
+	bot.Logger().SetOutput(logFile)
 
 	userRepo, err := db.SetupAndConnectDatabase(databaseUrl, bot.Logger())
 	if err != nil {
@@ -67,20 +89,107 @@ func NewBotWithConfig() (*Bot, error) {
 
 	bot.loadHelpMessage()
 
-	bot_config := &cfg.BotConfigs{
+	botConfig := &cfg.BotConfigs{
 		BotAPI:         cfg.DefaultBotAPI,
 		APIKey:         telegramToken,
 		UpdateConfigs:  cfg.DefaultUpdateConfigs(),
 		Webhook:        false,
 		LogFileAddress: cfg.DefaultLogFile,
 	}
-	b, err := bt.NewBot(bot_config)
+	b, err := bt.NewBot(botConfig)
 	if err != nil {
 		return nil, err
 	}
 	bot.SetTelegramClient(*b)
 
+	// Schedule daily log upload
+	go bot.scheduleDailyLogUpload(logFileName, bot.uploadLogs)
+
 	return bot, err
+}
+
+func (b *Bot) scheduleDailyLogUpload(logFileName string, uploadFunc func(logFileName string)) {
+	now := time.Now()
+	nextMidnight := time.Date(now.Year(), now.Month(), now.Day()+1, 0, 0, 0, 0, now.Location())
+	durationUntilMidnight := nextMidnight.Sub(now)
+
+	time.AfterFunc(durationUntilMidnight, func() {
+		uploadFunc(logFileName)
+
+		ticker := time.NewTicker(24 * time.Hour)
+		for range ticker.C {
+			uploadFunc(logFileName)
+		}
+	})
+}
+
+func (b *Bot) uploadLogs(logFileName string) {
+	b.uploadLogFileToR2(logFileName)
+	logFileName = fmt.Sprintf("logs-%s.log", time.Now().Format("2006-01-02"))
+	logFile, err := os.OpenFile(logFileName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		b.Logger().WithFields(logrus.Fields{"error": err}).Fatal("failed to open log file")
+	}
+	b.Logger().SetOutput(logFile)
+}
+
+func (b *Bot) setupBucket() error {
+	fmt.Println("entering bucket setup:")
+	r2Resolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
+		return aws.Endpoint{
+			URL: fmt.Sprintf("https://%s.r2.cloudflarestorage.com", bucketAccountId),
+		}, nil
+	})
+	cfg, err := config.LoadDefaultConfig(context.TODO(),
+		config.WithEndpointResolverWithOptions(r2Resolver),
+		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(bucketAccessKey, bucketSecretKey, "")),
+		config.WithRegion("auto"),
+	)
+	if err != nil {
+		return err
+	}
+
+	b.S3Client = s3.NewFromConfig(cfg)
+	return nil
+}
+
+func (b *Bot) uploadLogFileToR2(logFileName string) {
+	ctx := context.Background()
+
+	logFile, err := os.Open(logFileName)
+	if err != nil {
+		b.Logger().WithFields(logrus.Fields{"error": err}).Error("failed to open log file for upload")
+		return
+	}
+	defer logFile.Close()
+
+	fileInfo, err := logFile.Stat()
+	if err != nil {
+		b.Logger().WithFields(logrus.Fields{"error": err}).Error("failed to get log file info")
+		return
+	}
+	fileSize := fileInfo.Size()
+	buffer := make([]byte, fileSize)
+	_, err = logFile.Read(buffer)
+	if err != nil {
+		b.Logger().WithFields(logrus.Fields{"error": err}).Error("failed to read log file")
+		return
+	}
+
+	input := &s3.PutObjectInput{
+		Bucket:      aws.String(bucketName),
+		Key:         aws.String(logFileName),
+		Body:        bytes.NewReader(buffer),
+		ContentType: aws.String("text/plain"),
+	}
+
+	// Upload the file to Cloudflare R2 Storage
+	_, err = b.S3Client.PutObject(ctx, input)
+	if err != nil {
+		b.Logger().WithFields(logrus.Fields{"error": err}).Error("failed to read log file")
+		return
+	}
+	b.Logger().WithFields(logrus.Fields{"log_file": logFileName}).Info("successfully uploaded log file to R2")
 }
 
 func (b *Bot) Start(ctx context.Context) {
@@ -130,10 +239,12 @@ func (b *Bot) RunOauth2Endpoint() {
 	e.Use(middleware.Recover())
 
 	e.GET("/", func(c echo.Context) error {
+		b.Logger().Infof("[/] ok request")
 		c.JSON(200, "ok")
 		return nil
 	})
 	e.GET("/healthz", func(c echo.Context) error {
+		b.Logger().Infof("[Healthz] healthz request")
 		c.JSON(200, "ok")
 		return nil
 	})
@@ -162,6 +273,7 @@ func (b *Bot) RunOauth2Endpoint() {
 			return nil
 		}
 		b.SetNotionClient(state, notionToken)
+		b.Logger().Info("[OAuth] user linked its notion")
 		c.JSON(http.StatusOK, "your page has ben set, you can now close this page")
 		return nil
 	})

@@ -41,9 +41,9 @@ func TestRegisterCommandExecute(t *testing.T) {
 				})),
 			},
 			[]string{
-				"click on the following URL, authorize pages",
+				"click on the following URL, and authorize the page you want this bot to have access to",
 				"localhost&state=stateToken",
-				"when you have done with registration, select a default page using command `/defaultpage page`",
+				"when you have done with registration, select a default page using command `/defaultpage page` with the name of the page you have authorized before",
 			},
 			&ent.User{
 				ID: 1,
