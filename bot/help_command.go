@@ -25,6 +25,9 @@ func (hc *HelpCommand) Execute(ctx context.Context, update *objects.Update) {
 	if hc == nil || hc.IBot == nil {
 		return
 	}
+
+	hc.IncreaseHelpCount()
+
 	helpMessage := hc.GetHelpMessage()
 
 	err := hc.SendMessage(helpMessage, update.Message.Chat.Id, true, true)

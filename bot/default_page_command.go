@@ -34,6 +34,8 @@ func (dc *DefaultPageCommand) Execute(ctx context.Context, update *objects.Updat
 		return
 	}
 
+	dc.IncreaseDefaultPageCount()
+
 	id := update.Message.Chat.Id
 	dc.Logger().Infof("[DefaultPageCommand] got defaultpage request from %d", id)
 

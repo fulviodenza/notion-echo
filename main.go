@@ -24,7 +24,7 @@ func main() {
 		log.Fatalf("got error: %v", err)
 	}
 
-	go botWithConfig.RunOauth2Endpoint()
+	go botWithConfig.RunEndpoints()
 	go botWithConfig.Start(ctx)
 
 	sigCh := make(chan os.Signal, 1)

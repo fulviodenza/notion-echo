@@ -42,6 +42,8 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
 		return
 	}
 
+	cc.IncreaseNoteCount()
+
 	id := update.Message.Chat.Id
 	cc.Logger().Infof("[NoteCommand] got note from %d", id)
 

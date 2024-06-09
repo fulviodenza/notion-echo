@@ -8,6 +8,7 @@ import (
 	"github.com/jomei/notionapi"
 	"github.com/notion-echo/adapters/db"
 	"github.com/notion-echo/adapters/vault"
+	"github.com/notion-echo/metrics"
 	"github.com/sirupsen/logrus"
 )
 
@@ -29,6 +30,7 @@ type ICommand interface {
 
 // Getters and Setters methods Bot instances
 type IBot interface {
+	metrics.MetricsInterface
 	Start(ctx context.Context)
 	SendMessage(msg string, chatId int, formatMarkdown bool, escape bool) error
 	GetHelpMessage() string

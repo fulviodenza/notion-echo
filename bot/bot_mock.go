@@ -21,6 +21,13 @@ type MockBot struct {
 	VaultClient vault.VaultInterface
 }
 
+func (b *MockBot) IncreaseNoteCount()           {}
+func (m *MockBot) IncreaseRegisterCount()       {}
+func (m *MockBot) IncreaseDeauthorizeCount()    {}
+func (m *MockBot) IncreaseDefaultPageCount()    {}
+func (m *MockBot) IncreaseGetDefaultPageCount() {}
+func (m *MockBot) IncreaseHelpCount()           {}
+
 func NewMockBot(usersDb db.UserRepoInterface) *MockBot {
 	return &MockBot{
 		usersDb: usersDb,

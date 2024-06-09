@@ -27,6 +27,8 @@ func (dc *DeauthorizeCommand) Execute(ctx context.Context, update *objects.Updat
 		return
 	}
 
+	dc.IncreaseDeauthorizeCount()
+
 	id := update.Message.Chat.Id
 	dc.Logger().Infof("[DeauthorizeCommand] got deauthorize request from %d", id)
 

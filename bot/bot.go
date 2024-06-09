@@ -17,6 +17,7 @@ import (
 	"github.com/notion-echo/adapters/notion"
 	vaultadapter "github.com/notion-echo/adapters/vault"
 	"github.com/notion-echo/bot/types"
+	"github.com/notion-echo/metrics"
 	"github.com/notion-echo/oauth"
 	"github.com/notion-echo/utils"
 	"github.com/sirupsen/logrus"
@@ -30,6 +31,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type Bot struct {
@@ -41,11 +44,20 @@ type Bot struct {
 	S3Client       *s3.Client
 	helpMessage    string
 	logger         *logrus.Logger
+	metricsClient  metrics.MetricsInterface
 }
+
+func (b *Bot) IncreaseNoteCount()           { b.metricsClient.IncreaseNoteCount() }
+func (b *Bot) IncreaseRegisterCount()       { b.metricsClient.IncreaseRegisterCount() }
+func (b *Bot) IncreaseDeauthorizeCount()    { b.metricsClient.IncreaseDeauthorizeCount() }
+func (b *Bot) IncreaseDefaultPageCount()    { b.metricsClient.IncreaseDefaultPageCount() }
+func (b *Bot) IncreaseGetDefaultPageCount() { b.metricsClient.IncreaseGetDefaultPageCount() }
+func (b *Bot) IncreaseHelpCount()           { b.metricsClient.IncreaseHelpCount() }
 
 // this cast force us to follow the given interface
 // if the interface will not be followed, this will not compile
 var _ types.IBot = (*Bot)(nil)
+var _ metrics.MetricsInterface = (*Bot)(nil)
 
 var (
 	telegramToken   = os.Getenv(utils.TELEGRAM_TOKEN)
@@ -77,6 +89,8 @@ func NewBotWithConfig() (*Bot, error) {
 		return nil, fmt.Errorf("failed to open log file: %v", err)
 	}
 	bot.Logger().SetOutput(logFile)
+
+	bot.metricsClient = metrics.NewMetricsClient()
 
 	userRepo, err := db.SetupAndConnectDatabase(databaseUrl, bot.Logger())
 	if err != nil {
@@ -231,7 +245,7 @@ func (b *Bot) Start(ctx context.Context) {
 	}
 }
 
-func (b *Bot) RunOauth2Endpoint() {
+func (b *Bot) RunEndpoints() {
 	e := echo.New()
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 		Format: `{"time":"${time_rfc3339}", "method":"${method}", "uri":"${uri}", "status":${status}}` + "\n",
@@ -277,6 +291,8 @@ func (b *Bot) RunOauth2Endpoint() {
 		c.JSON(http.StatusOK, "your page has ben set, you can now close this page")
 		return nil
 	})
+	e.GET("/metrics", echo.WrapHandler(promhttp.Handler()))
+
 	address := fmt.Sprintf("0.0.0.0:%s", port)
 	e.Logger.Fatal(e.Start(address))
 }
