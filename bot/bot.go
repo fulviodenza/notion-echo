@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -62,18 +63,29 @@ var _ types.IBot = (*Bot)(nil)
 var _ metrics.MetricsInterface = (*Bot)(nil)
 
 var (
-	telegramToken   = os.Getenv(utils.TELEGRAM_TOKEN)
-	databaseUrl     = os.Getenv(utils.DATABASE_URL)
-	vaultSecretPath = os.Getenv(utils.VAULT_PATH)
-	vaultAddr       = os.Getenv(utils.VAULT_ADDR)
-	vaultSecretKey  = os.Getenv(utils.VAULT_SECRET_KEY)
-	vaultToken      = os.Getenv(utils.VAULT_TOKEN)
-	port            = os.Getenv(utils.PORT)
-	bucketName      = os.Getenv(utils.BUCKET_NAME)
-	bucketAccountId = os.Getenv(utils.BUCKET_ACCOUNT_ID)
-	bucketAccessKey = os.Getenv(utils.BUCKET_ACCESS_KEY)
-	bucketSecretKey = os.Getenv(utils.BUCKET_SECRET_KEY)
+	telegramToken     = os.Getenv(utils.TELEGRAM_TOKEN)
+	databaseUrl       = os.Getenv(utils.DATABASE_URL)
+	vaultSecretPath   = os.Getenv(utils.VAULT_PATH)
+	vaultAddr         = os.Getenv(utils.VAULT_ADDR)
+	vaultSecretKey    = os.Getenv(utils.VAULT_SECRET_KEY)
+	vaultToken        = os.Getenv(utils.VAULT_TOKEN)
+	port              = os.Getenv(utils.PORT)
+	bucketName        = os.Getenv(utils.BUCKET_NAME)
+	bucketAccountId   = os.Getenv(utils.BUCKET_ACCOUNT_ID)
+	bucketAccessKey   = os.Getenv(utils.BUCKET_ACCESS_KEY)
+	bucketSecretKey   = os.Getenv(utils.BUCKET_SECRET_KEY)
+	metricsAuthHeader = "Metrics-Auth"
 )
+
+func init() {
+	apiKey, err := utils.GenerateAPIKey(16)
+	if err != nil {
+		panic(err)
+	}
+
+	log.Printf("generated apiKey for metrics endpoint: %s", apiKey)
+	os.Setenv(metricsAuthHeader, apiKey)
+}
 
 func NewBotWithConfig() (*Bot, error) {
 	bot := &Bot{
@@ -293,7 +305,17 @@ func (b *Bot) RunEndpoints() {
 		c.JSON(http.StatusOK, "your page has ben set, you can now close this page")
 		return nil
 	})
-	e.GET("/metrics", echo.WrapHandler(promhttp.Handler()))
+
+	keyAuth := middleware.KeyAuthWithConfig(middleware.KeyAuthConfig{
+		KeyLookup: fmt.Sprintf("header:%s", metricsAuthHeader),
+		Validator: func(key string, c echo.Context) (bool, error) {
+			if key == os.Getenv(metricsAuthHeader) {
+				return true, nil
+			}
+			return false, nil
+		},
+	})
+	e.GET("/metrics", echo.WrapHandler(promhttp.Handler()), keyAuth)
 
 	address := fmt.Sprintf("0.0.0.0:%s", port)
 	e.Logger.Fatal(e.Start(address))

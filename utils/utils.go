@@ -5,6 +5,7 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/hex"
 	"errors"
 	"io"
 	"strings"
@@ -21,6 +22,14 @@ func SplitString(s string) []string {
 	}
 	group := s[:maxGroupLen]
 	return append([]string{group}, SplitString(s[maxGroupLen:])...)
+}
+
+func GenerateAPIKey(length int) (string, error) {
+	bytes := make([]byte, length)
+	if _, err := rand.Read(bytes); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(bytes), nil
 }
 
 func EncryptString(plainText string, encryptionKey []byte) (string, error) {
