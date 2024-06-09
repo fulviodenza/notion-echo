@@ -32,10 +32,9 @@ func (rc *RegisterCommand) Execute(ctx context.Context, update *objects.Update) 
 		return
 	}
 
-	rc.IncreaseRegisterCount()
-
 	id := update.Message.Chat.Id
 	rc.Logger().Infof("[RegisterCommand] got registration request from %d", id)
+	rc.IncreaseRegisterCount([]string{fmt.Sprintf("%d", id)})
 
 	stateToken, err := rc.generateStateToken()
 	if err != nil {

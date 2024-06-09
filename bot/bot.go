@@ -47,12 +47,14 @@ type Bot struct {
 	metricsClient  metrics.MetricsInterface
 }
 
-func (b *Bot) IncreaseNoteCount()           { b.metricsClient.IncreaseNoteCount() }
-func (b *Bot) IncreaseRegisterCount()       { b.metricsClient.IncreaseRegisterCount() }
-func (b *Bot) IncreaseDeauthorizeCount()    { b.metricsClient.IncreaseDeauthorizeCount() }
-func (b *Bot) IncreaseDefaultPageCount()    { b.metricsClient.IncreaseDefaultPageCount() }
-func (b *Bot) IncreaseGetDefaultPageCount() { b.metricsClient.IncreaseGetDefaultPageCount() }
-func (b *Bot) IncreaseHelpCount()           { b.metricsClient.IncreaseHelpCount() }
+func (b *Bot) IncreaseNoteCount(lvs []string)        { b.metricsClient.IncreaseNoteCount(lvs) }
+func (b *Bot) IncreaseRegisterCount(lvs []string)    { b.metricsClient.IncreaseRegisterCount(lvs) }
+func (b *Bot) IncreaseDeauthorizeCount(lvs []string) { b.metricsClient.IncreaseDeauthorizeCount(lvs) }
+func (b *Bot) IncreaseDefaultPageCount(lvs []string) { b.metricsClient.IncreaseDefaultPageCount(lvs) }
+func (b *Bot) IncreaseGetDefaultPageCount(lvs []string) {
+	b.metricsClient.IncreaseGetDefaultPageCount(lvs)
+}
+func (b *Bot) IncreaseHelpCount(lvs []string) { b.metricsClient.IncreaseHelpCount(lvs) }
 
 // this cast force us to follow the given interface
 // if the interface will not be followed, this will not compile

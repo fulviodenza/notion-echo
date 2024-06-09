@@ -12,5 +12,12 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     command: -p 5434
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    network_mode: "host"
 volumes:
   postgres_data:

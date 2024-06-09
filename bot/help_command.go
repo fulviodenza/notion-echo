@@ -2,6 +2,7 @@ package bot
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/SakoDroid/telego/v2/objects"
 	"github.com/notion-echo/bot/types"
@@ -26,11 +27,12 @@ func (hc *HelpCommand) Execute(ctx context.Context, update *objects.Update) {
 		return
 	}
 
-	hc.IncreaseHelpCount()
+	id := update.Message.Chat.Id
+	hc.IncreaseHelpCount([]string{fmt.Sprintf("%d", id)})
 
 	helpMessage := hc.GetHelpMessage()
 
-	err := hc.SendMessage(helpMessage, update.Message.Chat.Id, true, true)
+	err := hc.SendMessage(helpMessage, id, true, true)
 	if err != nil {
 		hc.Logger().WithFields(logrus.Fields{"error": err}).Error("help error")
 	}

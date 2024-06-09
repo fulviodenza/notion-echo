@@ -28,10 +28,9 @@ func (dc *GetDefaultPageCommand) Execute(ctx context.Context, update *objects.Up
 		return
 	}
 
-	dc.IncreaseGetDefaultPageCount()
-
 	id := update.Message.Chat.Id
 	dc.Logger().Infof("[GetDefaultPageCommand] got getdefaultpage request from %d", id)
+	dc.IncreaseGetDefaultPageCount([]string{fmt.Sprintf("%d", id)})
 
 	defaultPage, err := dc.GetUserRepo().GetDefaultPage(ctx, update.Message.Chat.Id)
 	if err != nil {

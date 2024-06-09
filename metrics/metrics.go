@@ -6,76 +6,92 @@ import (
 )
 
 type MetricsInterface interface {
-	IncreaseNoteCount()
-	IncreaseRegisterCount()
-	IncreaseDeauthorizeCount()
-	IncreaseDefaultPageCount()
-	IncreaseGetDefaultPageCount()
-	IncreaseHelpCount()
+	IncreaseNoteCount(lvs []string)
+	IncreaseRegisterCount(lvs []string)
+	IncreaseDeauthorizeCount(lvs []string)
+	IncreaseDefaultPageCount(lvs []string)
+	IncreaseGetDefaultPageCount(lvs []string)
+	IncreaseHelpCount(lvs []string)
 }
 
 type MetricsClient struct {
-	NoteMetrics           prometheus.Counter
-	RegisterMetrics       prometheus.Counter
-	DeauthorizeMetrics    prometheus.Counter
-	DefaultPageMetrics    prometheus.Counter
-	GetDefaultPageMetrics prometheus.Counter
-	HelpMetrics           prometheus.Counter
+	NoteMetrics           prometheus.GaugeVec
+	RegisterMetrics       prometheus.GaugeVec
+	DeauthorizeMetrics    prometheus.GaugeVec
+	DefaultPageMetrics    prometheus.GaugeVec
+	GetDefaultPageMetrics prometheus.GaugeVec
+	HelpMetrics           prometheus.GaugeVec
 }
 
 func NewMetricsClient() MetricsInterface {
 	return &MetricsClient{
-		NoteMetrics:           NoteMetrics,
-		RegisterMetrics:       RegisterMetrics,
-		DeauthorizeMetrics:    DeauthorizeMetrics,
-		DefaultPageMetrics:    DefaultPageMetrics,
-		GetDefaultPageMetrics: GetDefaultPageMetrics,
-		HelpMetrics:           HelpMetrics,
+		NoteMetrics:           *NoteMetrics,
+		RegisterMetrics:       *RegisterMetrics,
+		DeauthorizeMetrics:    *DeauthorizeMetrics,
+		DefaultPageMetrics:    *DefaultPageMetrics,
+		GetDefaultPageMetrics: *GetDefaultPageMetrics,
+		HelpMetrics:           *HelpMetrics,
 	}
 }
 
-func (m *MetricsClient) IncreaseNoteCount()           { m.NoteMetrics.Inc() }
-func (m *MetricsClient) IncreaseRegisterCount()       { m.RegisterMetrics.Inc() }
-func (m *MetricsClient) IncreaseDeauthorizeCount()    { m.DeauthorizeMetrics.Inc() }
-func (m *MetricsClient) IncreaseDefaultPageCount()    { m.DefaultPageMetrics.Inc() }
-func (m *MetricsClient) IncreaseGetDefaultPageCount() { m.GetDefaultPageMetrics.Inc() }
-func (m *MetricsClient) IncreaseHelpCount()           { m.HelpMetrics.Inc() }
+func (m *MetricsClient) IncreaseNoteCount(lvs []string) { m.NoteMetrics.WithLabelValues(lvs...).Inc() }
+func (m *MetricsClient) IncreaseRegisterCount(lvs []string) {
+	m.RegisterMetrics.WithLabelValues(lvs...).Inc()
+}
+func (m *MetricsClient) IncreaseDeauthorizeCount(lvs []string) {
+	m.DeauthorizeMetrics.WithLabelValues(lvs...).Inc()
+}
+func (m *MetricsClient) IncreaseDefaultPageCount(lvs []string) {
+	m.DefaultPageMetrics.WithLabelValues(lvs...).Inc()
+}
+func (m *MetricsClient) IncreaseGetDefaultPageCount(lvs []string) {
+	m.GetDefaultPageMetrics.WithLabelValues(lvs...).Inc()
+}
+func (m *MetricsClient) IncreaseHelpCount(lvs []string) {
+	m.HelpMetrics.WithLabelValues(lvs...).Inc()
+}
 
 var (
-	NoteMetrics = promauto.NewCounter(
-		prometheus.CounterOpts{
+	NoteMetrics = promauto.NewGaugeVec(
+		prometheus.GaugeOpts{
 			Name: "note_command_count",
 			Help: "number of note commands executed",
 		},
+		[]string{"user_id"},
 	)
-	RegisterMetrics = promauto.NewCounter(
-		prometheus.CounterOpts{
+	RegisterMetrics = promauto.NewGaugeVec(
+		prometheus.GaugeOpts{
 			Name: "register_command_count",
 			Help: "number of register commands executed",
 		},
+		[]string{"user_id"},
 	)
-	DeauthorizeMetrics = promauto.NewCounter(
-		prometheus.CounterOpts{
+	DeauthorizeMetrics = promauto.NewGaugeVec(
+		prometheus.GaugeOpts{
 			Name: "deauthorize_command_count",
 			Help: "number of deauthorize commands executed",
 		},
+		[]string{"user_id"},
 	)
-	DefaultPageMetrics = promauto.NewCounter(
-		prometheus.CounterOpts{
+	DefaultPageMetrics = promauto.NewGaugeVec(
+		prometheus.GaugeOpts{
 			Name: "defaultpage_command_count",
 			Help: "number of defaultpage commands executed",
 		},
+		[]string{"user_id"},
 	)
-	GetDefaultPageMetrics = promauto.NewCounter(
-		prometheus.CounterOpts{
+	GetDefaultPageMetrics = promauto.NewGaugeVec(
+		prometheus.GaugeOpts{
 			Name: "getdefaultpage_command_count",
 			Help: "number of getdefaultpage commands executed",
 		},
+		[]string{"user_id"},
 	)
-	HelpMetrics = promauto.NewCounter(
-		prometheus.CounterOpts{
+	HelpMetrics = promauto.NewGaugeVec(
+		prometheus.GaugeOpts{
 			Name: "help_command_count",
 			Help: "number of help commands executed",
 		},
+		[]string{"user_id"},
 	)
 )

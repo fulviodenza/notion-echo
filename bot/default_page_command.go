@@ -34,10 +34,9 @@ func (dc *DefaultPageCommand) Execute(ctx context.Context, update *objects.Updat
 		return
 	}
 
-	dc.IncreaseDefaultPageCount()
-
 	id := update.Message.Chat.Id
 	dc.Logger().Infof("[DefaultPageCommand] got defaultpage request from %d", id)
+	dc.IncreaseDefaultPageCount([]string{fmt.Sprintf("%d", id)})
 
 	encKey, err := dc.GetVaultClient().GetKey(os.Getenv("VAULT_PATH"))
 	if err != nil {

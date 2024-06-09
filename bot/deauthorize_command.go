@@ -2,6 +2,7 @@ package bot
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/SakoDroid/telego/v2/objects"
 	"github.com/notion-echo/bot/types"
@@ -27,10 +28,9 @@ func (dc *DeauthorizeCommand) Execute(ctx context.Context, update *objects.Updat
 		return
 	}
 
-	dc.IncreaseDeauthorizeCount()
-
 	id := update.Message.Chat.Id
 	dc.Logger().Infof("[DeauthorizeCommand] got deauthorize request from %d", id)
+	dc.IncreaseDeauthorizeCount([]string{fmt.Sprintf("%d", id)})
 
 	err := dc.GetUserRepo().DeleteUser(ctx, id)
 	if err != nil {
