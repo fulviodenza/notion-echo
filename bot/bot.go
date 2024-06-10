@@ -19,6 +19,7 @@ import (
 	"github.com/notion-echo/bot/types"
 	"github.com/notion-echo/oauth"
 	"github.com/notion-echo/utils"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 
 	bt "github.com/SakoDroid/telego/v2"
@@ -277,6 +278,19 @@ func (b *Bot) RunOauth2Endpoint() {
 		c.JSON(http.StatusOK, "your page has ben set, you can now close this page")
 		return nil
 	})
+
+	// keyAuth := middleware.KeyAuthWithConfig(middleware.KeyAuthConfig{
+	// 	KeyLookup: fmt.Sprintf("header:%s", metricsAuthHeader),
+	// 	Validator: func(key string, c echo.Context) (bool, error) {
+	// 		if key == os.Getenv(metricsAuthHeader) {
+	// 			return true, nil
+	// 		}
+	// 		return false, nil
+	// 	},
+	// })
+	// e.GET("/metrics", echo.WrapHandler(promhttp.Handler()), keyAuth)
+	e.GET("/metrics", echo.WrapHandler(promhttp.Handler()))
+
 	address := fmt.Sprintf("0.0.0.0:%s", port)
 	e.Logger.Fatal(e.Start(address))
 }
