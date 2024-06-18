@@ -146,30 +146,6 @@ func TestDefaultPageCommandExecute(t *testing.T) {
 			false,
 		},
 		{
-			"multiple pages in command",
-			fields{
-				update: update(withMessage("/defaultpage test b"), withId(1)),
-				envs: map[string]string{
-					"VAULT_PATH": "/localhost/test/",
-				},
-				bot: bot(withVault("/localhost/test/", "testKey")),
-				pages: map[string]*notionapi.Page{
-					"test": {
-						ID:     "1",
-						Object: notionapi.ObjectTypeBlock,
-					},
-				},
-			},
-			[]string{
-				"ignoring [b]",
-				successResp,
-			},
-			&ent.User{
-				ID: 1,
-			},
-			false,
-		},
-		{
 			"error getting default page",
 			fields{
 				update: update(withMessage("/defaultpage test"), withId(1)),

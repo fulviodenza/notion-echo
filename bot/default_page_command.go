@@ -11,6 +11,7 @@ import (
 	"github.com/notion-echo/adapters/notion"
 	"github.com/notion-echo/bot/types"
 	"github.com/notion-echo/errors"
+	"github.com/notion-echo/utils"
 	"github.com/sirupsen/logrus"
 )
 
@@ -50,16 +51,12 @@ func (dc *DefaultPageCommand) Execute(ctx context.Context, update *objects.Updat
 		return
 	}
 
-	selectedPages := strings.Split(update.Message.Text, " ")
-	selectedPage := ""
-	if len(selectedPages) == 1 {
+	_, selectedPage := utils.SplitFirstOccurrence(update.Message.Text, " ")
+	selectedPage = strings.TrimSpace(selectedPage)
+	if selectedPage == "" {
 		dc.SendMessage("defaultpage command requires a parameter, usage: /defaultpage yourpage", id, false, true)
 		return
 	}
-	if len(selectedPages) > 2 {
-		dc.SendMessage(fmt.Sprintf("ignoring %v", selectedPages[2:]), id, false, true)
-	}
-	selectedPage = selectedPages[1]
 
 	p, err := notionClient.SearchPage(ctx, selectedPage)
 	if err != nil || p.ID == "" || p.Object == "" {

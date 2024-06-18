@@ -84,3 +84,13 @@ func EscapeString(input string) string {
 
 	return input
 }
+
+func SplitFirstOccurrence(s string, sep string) (string, string) {
+	var part1, part2 string
+	if i := strings.Index(s, sep); i >= 0 {
+		part1, part2 = s[:i], s[i:]
+	} else {
+		return "", ""
+	}
+	return part1, part2
+}
