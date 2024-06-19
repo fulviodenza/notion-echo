@@ -46,6 +46,6 @@ func (rc *RegisterCommand) Execute(ctx context.Context, update *objects.Update) 
 	oauthURL := fmt.Sprintf("%s&state=%s", os.Getenv("OAUTH_URL"), url.QueryEscape(stateToken))
 	rc.SendMessage("click on the following URL, and authorize the page you want this bot to have access to", id, false, true)
 	rc.SendMessage(oauthURL, id, false, false)
-	rc.SendMessage("when you have done with registration, select a default page using command `/defaultpage page` with the name of the page you have authorized before", id, true, true)
+	rc.SendMessage("when you have done with registration, select a default page using command /defaultpage with the name of the page you have authorized before", id, true, true)
 	rc.Logger().Infof("[RegisterCommand] registration request from %d ended successfully", id)
 }
