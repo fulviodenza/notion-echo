@@ -18,6 +18,7 @@ import (
 	vaultadapter "github.com/notion-echo/adapters/vault"
 	"github.com/notion-echo/bot/types"
 	"github.com/notion-echo/oauth"
+	"github.com/notion-echo/state"
 	"github.com/notion-echo/utils"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
@@ -42,6 +43,7 @@ type Bot struct {
 	S3Client       *s3.Client
 	helpMessage    string
 	logger         *logrus.Logger
+	state          state.IUserState
 }
 
 // this cast force us to follow the given interface
@@ -68,6 +70,7 @@ func NewBotWithConfig() (*Bot, error) {
 	}
 	bot.Logger().SetFormatter(&logrus.JSONFormatter{})
 
+	bot.state = state.New()
 	err := bot.setupBucket()
 	if err != nil {
 		fmt.Println("got error:", err)
@@ -204,6 +207,18 @@ func (b *Bot) Start(ctx context.Context) {
 			if strings.Contains(update.Message.Caption, "/note") {
 				NewNoteCommand(b, buildNotionClient)(ctx, update)
 			}
+
+			if state := b.GetUserState(update.Message.Chat.Id); state != "" {
+				switch state {
+				case "/note":
+					NewNoteCommand(b, buildNotionClient)(ctx, update)
+					b.state.Delete(update.Message.Chat.Id)
+				case "/defaultpage":
+					NewDefaultPageCommand(b, buildNotionClient)(ctx, update)
+					b.state.Delete(update.Message.Chat.Id)
+				}
+			}
+
 			b.Logger().WithFields(logrus.Fields{"update_id": update.Update_id}).Info("received update")
 		}
 	}()
@@ -216,9 +231,10 @@ func (b *Bot) Start(ctx context.Context) {
 			if strings.Contains(c, "/start") {
 				kb := b.TelegramClient.CreateKeyboard(false, false, false, false, "type ...")
 
-				kb.AddButton("/help", 1)
+				kb.AddButton("/note", 1)
 				kb.AddButton("/register", 1)
 				kb.AddButton("/getdefaultpage", 2)
+				kb.AddButton("/help", 2)
 
 				_, err := b.TelegramClient.AdvancedMode().ASendMessage(u.Message.Chat.Id, "Welcome to notion-echo bot!", "", u.Message.MessageId, 0, false, false, nil, false, false, kb)
 				if err != nil {
@@ -451,4 +467,16 @@ func buildNotionClient(ctx context.Context, userRepo db.UserRepoInterface, id in
 		return nil, err
 	}
 	return notion.NewNotionService(notionapi.NewClient(notionapi.Token(token))), nil
+}
+
+func (b *Bot) GetUserState(userID int) string {
+	return b.state.Get(userID)
+}
+
+func (b *Bot) SetUserState(userID int, msg string) {
+	b.state.Set(userID, msg)
+}
+
+func (b *Bot) DeleteUserState(userID int) {
+	b.state.Delete(userID)
 }

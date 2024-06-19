@@ -42,4 +42,7 @@ type IBot interface {
 	GetVaultClient() vault.VaultInterface
 	SetVaultClient(v vault.VaultInterface)
 	Logger() *logrus.Logger
+	GetUserState(userID int) string
+	SetUserState(userID int, msg string)
+	DeleteUserState(userID int)
 }

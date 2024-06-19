@@ -51,11 +51,20 @@ func (dc *DefaultPageCommand) Execute(ctx context.Context, update *objects.Updat
 		return
 	}
 
-	_, selectedPage := utils.SplitFirstOccurrence(update.Message.Text, " ")
-	selectedPage = strings.TrimSpace(selectedPage)
-	if selectedPage == "" {
-		dc.SendMessage("defaultpage command requires a parameter, usage: /defaultpage yourpage", id, false, true)
+	selectedPage := ""
+	if dc.GetUserState(id) == "" {
+		_, selectedPage = utils.SplitFirstOccurrence(update.Message.Text, " ")
+		selectedPage = strings.TrimSpace(selectedPage)
+	}
+	if selectedPage == "" && dc.GetUserState(id) == "" {
+		dc.SetUserState(id, "/defaultpage")
+		dc.SendMessage("write the page name in the next message", id, false, true)
 		return
+	}
+
+	if dc.GetUserState(id) != "" {
+		selectedPage = strings.TrimSpace(update.Message.Text)
+		dc.DeleteUserState(id)
 	}
 
 	p, err := notionClient.SearchPage(ctx, selectedPage)

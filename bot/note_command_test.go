@@ -79,7 +79,7 @@ func TestNoteCommandExecute(t *testing.T) {
 				},
 			},
 			[]string{
-				"write something in your note",
+				"write your note in the next message",
 			},
 			&ent.User{
 				ID: 1,

@@ -18,7 +18,7 @@ import (
 
 func TestDefaultPageCommandExecute(t *testing.T) {
 	successResp := "page test set as default"
-	selectPageResp := "defaultpage command requires a parameter, usage: /defaultpage yourpage"
+	selectPageResp := "write the page name in the next message"
 
 	type fields struct {
 		update               *objects.Update

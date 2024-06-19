@@ -52,14 +52,21 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
 		messageText = update.Message.Caption
 	}
 	noteText := strings.Replace(messageText, "/note", "", 1)
-	if noteText == "" && update.Message.Text != "" {
-		cc.SendMessage("write something in your note", id, false, true)
+	if noteText == "" {
+		cc.SetUserState(id, "/note")
+		cc.SendMessage("write your note in the next message", id, false, true)
 		return
 	}
 
-	children := []notionapi.Block{}
-	filePath := ""
+	defer func(userID int) {
+		if cc.GetUserState(userID) != "" {
+			cc.DeleteUserState(userID)
+		}
+	}(id)
+
 	var err error
+	filePath := ""
+	children := []notionapi.Block{}
 	if update.Message.Document != nil && update.Message.Document.FileId != "" {
 		filePath, err = downloadAndUploadDocument(cc.IBot, update.Message.Document)
 	}
