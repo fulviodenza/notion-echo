@@ -128,8 +128,24 @@ func (b *Bot) scheduleDailyLogUpload(logFileName string, uploadFunc func(logFile
 }
 
 func (b *Bot) uploadLogs(logFileName string) {
-	b.uploadLogFileToR2(logFileName)
-	logFileName = fmt.Sprintf("logs-%s.log", time.Now().Format("2006-01-02"))
+	newLogFileName := fmt.Sprintf("logs-%s.log", time.Now().Format("2006-01-02"))
+	err := os.Rename(logFileName, newLogFileName)
+	if err != nil {
+		b.Logger().WithFields(logrus.Fields{"error": err}).Error("failed to rename log file")
+		return
+	}
+
+	compressedLogFileName := newLogFileName + ".gz"
+	err = utils.CompressFile(newLogFileName, compressedLogFileName)
+	if err != nil {
+		b.Logger().WithFields(logrus.Fields{"error": err}).Error("failed to compress log file")
+		return
+	}
+
+	err = b.uploadLogFileToR2(compressedLogFileName)
+	if err != nil {
+		b.Logger().WithFields(logrus.Fields{"error": err}).Fatal("failed to open log file")
+	}
 	logFile, err := os.OpenFile(logFileName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
 		b.Logger().WithFields(logrus.Fields{"error": err}).Fatal("failed to open log file")
@@ -157,27 +173,27 @@ func (b *Bot) setupBucket() error {
 	return nil
 }
 
-func (b *Bot) uploadLogFileToR2(logFileName string) {
+func (b *Bot) uploadLogFileToR2(logFileName string) error {
 	ctx := context.Background()
 
 	logFile, err := os.Open(logFileName)
 	if err != nil {
 		b.Logger().WithFields(logrus.Fields{"error": err}).Error("failed to open log file for upload")
-		return
+		return err
 	}
 	defer logFile.Close()
 
 	fileInfo, err := logFile.Stat()
 	if err != nil {
 		b.Logger().WithFields(logrus.Fields{"error": err}).Error("failed to get log file info")
-		return
+		return err
 	}
 	fileSize := fileInfo.Size()
 	buffer := make([]byte, fileSize)
 	_, err = logFile.Read(buffer)
 	if err != nil {
 		b.Logger().WithFields(logrus.Fields{"error": err}).Error("failed to read log file")
-		return
+		return err
 	}
 
 	input := &s3.PutObjectInput{
@@ -191,9 +207,10 @@ func (b *Bot) uploadLogFileToR2(logFileName string) {
 	_, err = b.S3Client.PutObject(ctx, input)
 	if err != nil {
 		b.Logger().WithFields(logrus.Fields{"error": err}).Error("failed to read log file")
-		return
+		return err
 	}
 	b.Logger().WithFields(logrus.Fields{"log_file": logFileName}).Info("successfully uploaded log file to R2")
+	return nil
 }
 
 func (b *Bot) Start(ctx context.Context) {

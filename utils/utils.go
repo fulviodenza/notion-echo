@@ -1,12 +1,14 @@
 package utils
 
 import (
+	"compress/gzip"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
 	"io"
+	"os"
 	"strings"
 )
 
@@ -93,4 +95,24 @@ func SplitFirstOccurrence(s string, sep string) (string, string) {
 		return "", ""
 	}
 	return part1, part2
+}
+
+func CompressFile(source, target string) error {
+	reader, err := os.Open(source)
+	if err != nil {
+		return err
+	}
+	defer reader.Close()
+
+	writer, err := os.Create(target)
+	if err != nil {
+		return err
+	}
+	defer writer.Close()
+
+	gzipWriter := gzip.NewWriter(writer)
+	defer gzipWriter.Close()
+
+	_, err = io.Copy(gzipWriter, reader)
+	return err
 }
