@@ -53,5 +53,4 @@ We welcome contributions of all kinds from the community. If you're interested i
 - Save new notes formats
   
 ## Known issues
-- use buttons to create a flow
 - transcribe markdown
