@@ -10,6 +10,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/notion-echo/adapters/db"
 	"github.com/notion-echo/adapters/ent"
+	notionerrors "github.com/notion-echo/errors"
 )
 
 func TestGetDefaultPageCommandExecute(t *testing.T) {
@@ -52,7 +53,7 @@ func TestGetDefaultPageCommandExecute(t *testing.T) {
 					},
 				})),
 			},
-			[]string{"page not found"},
+			[]string{notionerrors.ErrPageNotFound.Error()},
 		},
 		{
 			"error getting default page",
@@ -62,7 +63,7 @@ func TestGetDefaultPageCommandExecute(t *testing.T) {
 					Err: errors.New(""),
 				})),
 			},
-			[]string{"page not found"},
+			[]string{notionerrors.ErrPageNotFound.Error()},
 		},
 	}
 
