@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/jomei/notionapi"
-	"github.com/notion-echo/errors"
 )
 
 var _ NotionInterface = (*NotionMock)(nil)
@@ -21,15 +20,17 @@ func NewNotionMock(pages map[string]*notionapi.Page, err error) NotionInterface 
 	}
 }
 
-func (v *NotionMock) SearchPage(ctx context.Context, pageName string) (*notionapi.Page, error) {
+func (v *NotionMock) SearchPage(ctx context.Context, pageName string) ([]*notionapi.Page, error) {
 	if v.err != nil {
 		return nil, v.err
 	}
-	if p, ok := v.pages[pageName]; !ok {
-		return nil, errors.ErrPageNotFound
-	} else {
-		return p, nil
+
+	pages := []*notionapi.Page{}
+	for _, v := range v.pages {
+		pages = append(pages, v)
 	}
+
+	return pages, nil
 }
 
 func (v *NotionMock) Block() notionapi.BlockService {

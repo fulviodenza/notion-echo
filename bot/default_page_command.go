@@ -67,11 +67,19 @@ func (dc *DefaultPageCommand) Execute(ctx context.Context, update *objects.Updat
 		dc.DeleteUserState(id)
 	}
 
-	p, err := notionClient.SearchPage(ctx, selectedPage)
-	if err != nil || p.ID == "" || p.Object == "" {
-		if err != nil {
-			dc.Logger().WithFields(logrus.Fields{"error": err}).Error("default page error")
-		}
+	pages, err := notionClient.SearchPage(ctx, selectedPage)
+	if err != nil {
+		dc.Logger().WithFields(logrus.Fields{"error": err}).Error("default page error")
+		return
+	}
+
+	if len(pages) == 0 {
+		dc.Logger().WithFields(logrus.Fields{"error": err}).Error("note error")
+		dc.SendMessage(errors.ErrBotNotAuthorized.Error(), id, false, true)
+		return
+	}
+	p := pages[0]
+	if p.ID == "" || p.Object == "" {
 		dc.SendMessage(errors.ErrPageNotFound.Error(), id, false, true)
 		return
 	}

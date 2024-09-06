@@ -102,16 +102,22 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
 	if err != nil {
 		cc.Logger().WithFields(logrus.Fields{"error": err}).Error("note error")
 	}
-	if err != nil || defaultPage == "" {
+	if err != nil {
 		cc.SendMessage(errors.ErrPageNotFound.Error(), id, false, true)
 		return
 	}
-	page, err := notionClient.SearchPage(ctx, defaultPage)
+	pages, err := notionClient.SearchPage(ctx, defaultPage)
 	if err != nil {
 		cc.Logger().WithFields(logrus.Fields{"error": err}).Error("note error")
 		cc.SendMessage(errors.ErrPageNotFound.Error(), id, false, true)
 		return
 	}
+	if len(pages) == 0 {
+		cc.Logger().WithFields(logrus.Fields{"error": err}).Error("note error")
+		cc.SendMessage(errors.ErrBotNotAuthorized.Error(), id, false, true)
+		return
+	}
+	page := pages[0]
 	_, err = notionClient.Block().AppendChildren(ctx, notionapi.BlockID(page.ID), blocks)
 	if err != nil {
 		cc.Logger().WithFields(logrus.Fields{"error": err}).Error("note error")
