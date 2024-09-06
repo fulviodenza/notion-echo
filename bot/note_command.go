@@ -102,23 +102,30 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
 	if err != nil {
 		cc.Logger().WithFields(logrus.Fields{"error": err}).Error("note error")
 	}
-	if err != nil || defaultPage == "" {
+	if err != nil {
 		cc.SendMessage(errors.ErrPageNotFound.Error(), id, false, true)
 		return
 	}
-	page, err := notionClient.SearchPage(ctx, defaultPage)
+	pages, err := notionClient.SearchPage(ctx, defaultPage)
 	if err != nil {
 		cc.Logger().WithFields(logrus.Fields{"error": err}).Error("note error")
 		cc.SendMessage(errors.ErrPageNotFound.Error(), id, false, true)
 		return
 	}
+	if len(pages) == 0 {
+		cc.Logger().WithFields(logrus.Fields{"error": err}).Error("note error")
+		cc.SendMessage(errors.ErrBotNotAuthorized.Error(), id, false, true)
+		return
+	}
+	page := pages[0]
 	_, err = notionClient.Block().AppendChildren(ctx, notionapi.BlockID(page.ID), blocks)
 	if err != nil {
 		cc.Logger().WithFields(logrus.Fields{"error": err}).Error("note error")
 		cc.SendMessage(errors.ErrSaveNote.Error(), id, false, true)
 		return
 	}
-	cc.SendMessage(NOTE_SAVED, id, false, false)
+
+	cc.SendMessage(fmt.Sprintf("%s on %s page", NOTE_SAVED, notion.ExtractName(page.Properties)), id, false, false)
 }
 
 func downloadAndUploadDocument(bot types.IBot, ps *objects.Document) (string, error) {

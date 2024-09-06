@@ -52,11 +52,22 @@ func TestNoteCommandExecute(t *testing.T) {
 					"test": {
 						ID:     "1",
 						Object: notionapi.ObjectTypeBlock,
+						Properties: map[string]notionapi.Property{
+							"title": &notionapi.TitleProperty{
+								Title: []notionapi.RichText{
+									{
+										Text: &notionapi.Text{
+											Content: "Title",
+										},
+									},
+								},
+							},
+						},
 					},
 				},
 			},
 			[]string{
-				"note saved",
+				"note saved on Title page",
 			},
 			&ent.User{
 				ID: 1,
@@ -64,7 +75,7 @@ func TestNoteCommandExecute(t *testing.T) {
 			false,
 		},
 		{
-			"save note",
+			"save note with next message",
 			fields{
 				update: update(withMessage("/note"), withId(1)),
 				envs: map[string]string{
