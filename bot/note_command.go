@@ -125,12 +125,7 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
 		return
 	}
 
-	pageName := notion.ExtractName(page.Properties)
-	if err != nil {
-		fmt.Println("Error extracting names:", err)
-		return
-	}
-	cc.SendMessage(fmt.Sprintf("%s on %s page", NOTE_SAVED, pageName), id, false, false)
+	cc.SendMessage(fmt.Sprintf("%s on %s page", NOTE_SAVED, notion.ExtractName(page.Properties)), id, false, false)
 }
 
 func downloadAndUploadDocument(bot types.IBot, ps *objects.Document) (string, error) {

@@ -55,9 +55,14 @@ type NotionPageName struct {
 }
 
 func ExtractName(props notionapi.Properties) string {
-	if titleProperty, ok := props["Title"].(notionapi.TitleProperty); ok {
+	if titleProperty, ok := props["title"].(*notionapi.TitleProperty); ok {
 		if len(titleProperty.Title) > 0 {
-			return titleProperty.Title[0].Text.Content
+			if titleProperty.Title[0].Text.Content != "" {
+				return titleProperty.Title[0].Text.Content
+			}
+			if titleProperty.Title[0].PlainText != "" {
+				return titleProperty.Title[0].PlainText
+			}
 		}
 	}
 	return ""
