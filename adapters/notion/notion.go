@@ -46,3 +46,19 @@ func (ns *Service) SearchPage(ctx context.Context, pageName string) ([]*notionap
 func (ns *Service) Block() notionapi.BlockService {
 	return ns.Client.Block
 }
+
+type NotionPageName struct {
+	Title       string   `json:"title,omitempty"`
+	Select      string   `json:"select,omitempty"`
+	MultiSelect []string `json:"multi_select,omitempty"`
+	Status      string   `json:"status,omitempty"`
+}
+
+func ExtractName(props notionapi.Properties) string {
+	if titleProperty, ok := props["Title"].(notionapi.TitleProperty); ok {
+		if len(titleProperty.Title) > 0 {
+			return titleProperty.Title[0].Text.Content
+		}
+	}
+	return ""
+}

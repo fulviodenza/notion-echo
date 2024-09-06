@@ -124,7 +124,13 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
 		cc.SendMessage(errors.ErrSaveNote.Error(), id, false, true)
 		return
 	}
-	cc.SendMessage(fmt.Sprintf("%s on %s page", NOTE_SAVED, page), id, false, false)
+
+	pageName := notion.ExtractName(page.Properties)
+	if err != nil {
+		fmt.Println("Error extracting names:", err)
+		return
+	}
+	cc.SendMessage(fmt.Sprintf("%s on %s page", NOTE_SAVED, pageName), id, false, false)
 }
 
 func downloadAndUploadDocument(bot types.IBot, ps *objects.Document) (string, error) {

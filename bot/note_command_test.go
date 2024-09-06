@@ -52,11 +52,22 @@ func TestNoteCommandExecute(t *testing.T) {
 					"test": {
 						ID:     "1",
 						Object: notionapi.ObjectTypeBlock,
+						Properties: map[string]notionapi.Property{
+							"Title": notionapi.TitleProperty{
+								Title: []notionapi.RichText{
+									{
+										Text: &notionapi.Text{
+											Content: "Title",
+										},
+									},
+								},
+							},
+						},
 					},
 				},
 			},
 			[]string{
-				"note saved",
+				"note saved on Title page",
 			},
 			&ent.User{
 				ID: 1,
