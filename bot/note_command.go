@@ -51,12 +51,32 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
 	if update.Message.Caption != "" {
 		messageText = update.Message.Caption
 	}
-	noteText := strings.Replace(messageText, "/note", "", 1)
-	if noteText == "" {
-		cc.SetUserState(id, "/note")
-		cc.SendMessage("write your note in the next message", id, false, true)
-		return
+	var pageName string
+	var noteText string
+	if strings.Contains(messageText, "--page"){
+		parts := strings.SplitN(messageText, "\"", 3)
+		if len(parts) < 3 { 
+			cc.SendMessage("Make sure you have enclosed the page name in quotes.", id, false, true)
+			return
+		}
+		pageName = parts[1] 
+		noteText = parts[2]
+		if pageName == "" {
+			cc.SendMessage("No page name specified.", id, false, true)
+			return
+		}
+	} else { 
+		noteText := strings.Replace(messageText, "/note", "", 1)
+		if noteText == "" {
+			cc.SetUserState(id, "/note")
+			cc.SendMessage("write your note in the next message", id, false, true)
+			return
+		}
 	}
+
+
+
+
 
 	defer func(userID int) {
 		if cc.GetUserState(userID) != "" {
@@ -98,26 +118,49 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
 		cc.SendMessage(errors.ErrNotRegistered.Error(), id, false, true)
 		return
 	}
-	defaultPage, err := cc.GetUserRepo().GetDefaultPage(ctx, id)
-	if err != nil {
-		cc.Logger().WithFields(logrus.Fields{"error": err}).Error("note error")
+
+
+
+
+	if pageName != "" {
+		pages, err := notionClient.SearchPage(ctx, pageName)
+		if err != nil {
+			cc.Logger().WithFields(logrus.Fields{"error": err}).Error("note error")
+			cc.SendMessage(errors.ErrPageNotFound.Error(), id, false, true)
+			return
+		}
+		if len(pages) == 0 {
+			cc.Logger().WithFields(logrus.Fields{"error": err}).Error("note error")
+			cc.SendMessage(errors.ErrBotNotAuthorized.Error(), id, false, true)
+			return
+		}
+		page := pages[0]
+
+	} else { 
+
+		defaultPage, err := cc.GetUserRepo().GetDefaultPage(ctx, id)
+		if err != nil {
+			cc.Logger().WithFields(logrus.Fields{"error": err}).Error("note error")
+			cc.SendMessage(errors.ErrPageNotFound.Error(), id, false, true)
+			return
+		}
+		pages, err := notionClient.SearchPage(ctx, defaultPage)
+		if err != nil {
+			cc.Logger().WithFields(logrus.Fields{"error": err}).Error("note error")
+			cc.SendMessage(errors.ErrPageNotFound.Error(), id, false, true)
+			return
+		}
+		if len(pages) == 0 {
+			cc.Logger().WithFields(logrus.Fields{"error": err}).Error("note error")
+			cc.SendMessage(errors.ErrBotNotAuthorized.Error(), id, false, true)
+			return
+		}
+		page := pages[0]
 	}
-	if err != nil {
-		cc.SendMessage(errors.ErrPageNotFound.Error(), id, false, true)
-		return
-	}
-	pages, err := notionClient.SearchPage(ctx, defaultPage)
-	if err != nil {
-		cc.Logger().WithFields(logrus.Fields{"error": err}).Error("note error")
-		cc.SendMessage(errors.ErrPageNotFound.Error(), id, false, true)
-		return
-	}
-	if len(pages) == 0 {
-		cc.Logger().WithFields(logrus.Fields{"error": err}).Error("note error")
-		cc.SendMessage(errors.ErrBotNotAuthorized.Error(), id, false, true)
-		return
-	}
-	page := pages[0]
+
+
+
+
 	_, err = notionClient.Block().AppendChildren(ctx, notionapi.BlockID(page.ID), blocks)
 	if err != nil {
 		cc.Logger().WithFields(logrus.Fields{"error": err}).Error("note error")
