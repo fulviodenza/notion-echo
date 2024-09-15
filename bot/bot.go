@@ -1,7 +1,6 @@
 package bot
 
 import (
-	"bytes"
 	"context"
 	"crypto/rand"
 	"encoding/base64"
@@ -15,6 +14,7 @@ import (
 	"github.com/jomei/notionapi"
 	"github.com/notion-echo/adapters/db"
 	"github.com/notion-echo/adapters/notion"
+	"github.com/notion-echo/adapters/r2"
 	vaultadapter "github.com/notion-echo/adapters/vault"
 	"github.com/notion-echo/bot/types"
 	"github.com/notion-echo/oauth"
@@ -26,10 +26,6 @@ import (
 	bt "github.com/SakoDroid/telego/v2"
 	cfg "github.com/SakoDroid/telego/v2/configs"
 	objs "github.com/SakoDroid/telego/v2/objects"
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/credentials"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 )
@@ -40,7 +36,7 @@ type Bot struct {
 	NotionClient   map[string]string
 	UserRepo       db.UserRepoInterface
 	VaultClient    vaultadapter.VaultInterface
-	S3Client       *s3.Client
+	R2Client       r2.R2Interface
 	helpMessage    string
 	logger         *logrus.Logger
 	state          state.IUserState
@@ -58,10 +54,6 @@ var (
 	vaultSecretKey  = os.Getenv(utils.VAULT_SECRET_KEY)
 	vaultToken      = os.Getenv(utils.VAULT_TOKEN)
 	port            = os.Getenv(utils.PORT)
-	bucketName      = os.Getenv(utils.BUCKET_NAME)
-	bucketAccountId = os.Getenv(utils.BUCKET_ACCOUNT_ID)
-	bucketAccessKey = os.Getenv(utils.BUCKET_ACCESS_KEY)
-	bucketSecretKey = os.Getenv(utils.BUCKET_SECRET_KEY)
 )
 
 func NewBotWithConfig() (*Bot, error) {
@@ -71,9 +63,9 @@ func NewBotWithConfig() (*Bot, error) {
 	bot.Logger().SetFormatter(&logrus.JSONFormatter{})
 
 	bot.state = state.New()
-	err := bot.setupBucket()
+	r2Client, err := r2.NewR2Client()
 	if err != nil {
-		fmt.Println("got error:", err)
+		fmt.Printf("got error: %v setting up r2 client", err)
 	}
 	logFileName := fmt.Sprintf("logs-%s.log", time.Now().Format("2006-01-02"))
 	logFile, err := os.OpenFile(logFileName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
@@ -105,112 +97,27 @@ func NewBotWithConfig() (*Bot, error) {
 		return nil, err
 	}
 	bot.SetTelegramClient(*b)
+	bot.SetR2Client(r2Client)
 
 	// Schedule daily log upload
-	go bot.scheduleDailyLogUpload(logFileName, bot.uploadLogs)
+	go bot.scheduleDailyLogUpload(logFileName, r2Client.UploadLogs, bot.logger)
 
 	return bot, err
 }
 
-func (b *Bot) scheduleDailyLogUpload(logFileName string, uploadFunc func(logFileName string)) {
+func (b *Bot) scheduleDailyLogUpload(logFileName string, uploadFunc func(logFileName string, logger *logrus.Logger) error, logger *logrus.Logger) {
 	now := time.Now()
 	nextMidnight := time.Date(now.Year(), now.Month(), now.Day()+1, 0, 0, 0, 0, now.Location())
 	durationUntilMidnight := nextMidnight.Sub(now)
 
 	time.AfterFunc(durationUntilMidnight, func() {
-		uploadFunc(logFileName)
+		uploadFunc(logFileName, logger)
 
 		ticker := time.NewTicker(24 * time.Hour)
 		for range ticker.C {
-			uploadFunc(logFileName)
+			uploadFunc(logFileName, logger)
 		}
 	})
-}
-
-func (b *Bot) uploadLogs(logFileName string) {
-	newLogFileName := fmt.Sprintf("logs-%s.log", time.Now().Format("2006-01-02"))
-	err := os.Rename(logFileName, newLogFileName)
-	if err != nil {
-		b.Logger().WithFields(logrus.Fields{"error": err}).Error("failed to rename log file")
-		return
-	}
-
-	compressedLogFileName := newLogFileName + ".gz"
-	err = utils.CompressFile(newLogFileName, compressedLogFileName)
-	if err != nil {
-		b.Logger().WithFields(logrus.Fields{"error": err}).Error("failed to compress log file")
-		return
-	}
-
-	err = b.uploadLogFileToR2(compressedLogFileName)
-	if err != nil {
-		b.Logger().WithFields(logrus.Fields{"error": err}).Fatal("failed to open log file")
-	}
-	logFile, err := os.OpenFile(logFileName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	if err != nil {
-		b.Logger().WithFields(logrus.Fields{"error": err}).Fatal("failed to open log file")
-	}
-	b.Logger().SetOutput(logFile)
-}
-
-func (b *Bot) setupBucket() error {
-	fmt.Println("entering bucket setup:")
-	r2Resolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
-		return aws.Endpoint{
-			URL: fmt.Sprintf("https://%s.r2.cloudflarestorage.com", bucketAccountId),
-		}, nil
-	})
-	cfg, err := config.LoadDefaultConfig(context.TODO(),
-		config.WithEndpointResolverWithOptions(r2Resolver),
-		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(bucketAccessKey, bucketSecretKey, "")),
-		config.WithRegion("auto"),
-	)
-	if err != nil {
-		return err
-	}
-
-	b.S3Client = s3.NewFromConfig(cfg)
-	return nil
-}
-
-func (b *Bot) uploadLogFileToR2(logFileName string) error {
-	ctx := context.Background()
-
-	logFile, err := os.Open(logFileName)
-	if err != nil {
-		b.Logger().WithFields(logrus.Fields{"error": err}).Error("failed to open log file for upload")
-		return err
-	}
-	defer logFile.Close()
-
-	fileInfo, err := logFile.Stat()
-	if err != nil {
-		b.Logger().WithFields(logrus.Fields{"error": err}).Error("failed to get log file info")
-		return err
-	}
-	fileSize := fileInfo.Size()
-	buffer := make([]byte, fileSize)
-	_, err = logFile.Read(buffer)
-	if err != nil {
-		b.Logger().WithFields(logrus.Fields{"error": err}).Error("failed to read log file")
-		return err
-	}
-
-	input := &s3.PutObjectInput{
-		Bucket:      aws.String(bucketName),
-		Key:         aws.String(logFileName),
-		Body:        bytes.NewReader(buffer),
-		ContentType: aws.String("text/plain"),
-	}
-
-	// Upload the file to Cloudflare R2 Storage
-	_, err = b.S3Client.PutObject(ctx, input)
-	if err != nil {
-		b.Logger().WithFields(logrus.Fields{"error": err}).Error("failed to read log file")
-		return err
-	}
-	b.Logger().WithFields(logrus.Fields{"log_file": logFileName}).Info("successfully uploaded log file to R2")
-	return nil
 }
 
 func (b *Bot) Start(ctx context.Context) {
@@ -385,6 +292,9 @@ func (b *Bot) SetTelegramClient(bot bt.Bot) {
 }
 func (b *Bot) GetTelegramClient() *bt.Bot {
 	return &b.TelegramClient
+}
+func (b *Bot) SetR2Client(bot r2.R2Interface) {
+	b.R2Client = bot
 }
 
 func (b *Bot) SetUserRepo(db db.UserRepoInterface) {

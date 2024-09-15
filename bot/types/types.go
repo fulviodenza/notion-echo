@@ -7,6 +7,7 @@ import (
 	objs "github.com/SakoDroid/telego/v2/objects"
 	"github.com/jomei/notionapi"
 	"github.com/notion-echo/adapters/db"
+	"github.com/notion-echo/adapters/r2"
 	"github.com/notion-echo/adapters/vault"
 	"github.com/sirupsen/logrus"
 )
@@ -33,6 +34,7 @@ type IBot interface {
 	SendMessage(msg string, chatId int, formatMarkdown bool, escape bool) error
 	GetHelpMessage() string
 	SetTelegramClient(bot bt.Bot)
+	SetR2Client(r2 r2.R2Interface)
 	GetTelegramClient() *bt.Bot
 	SetNotionUser(token string)
 	SetNotionClient(token string, notionToken string)
