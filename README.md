@@ -57,5 +57,5 @@ We welcome contributions of all kinds from the community. If you're interested i
 - transcribe markdown
 
 ## Contributors:
-- @Diegghh
-- @Ladvace
+- [Diegghh](https://github.com/Diegghh)
+- [Ladvace](https://github.com/Ladvace)
