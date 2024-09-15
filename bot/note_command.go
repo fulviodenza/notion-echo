@@ -13,7 +13,9 @@ import (
 	"github.com/notion-echo/adapters/notion"
 	"github.com/notion-echo/bot/types"
 	notionerrors "github.com/notion-echo/errors"
+	"github.com/notion-echo/metrics"
 	"github.com/notion-echo/utils"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 )
 
@@ -45,6 +47,8 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
 
 	id := update.Message.Chat.Id
 	cc.Logger().Infof("[NoteCommand] got note from %d", id)
+
+	metrics.NoteCount.With(prometheus.Labels{"id": string(id)}).Inc()
 
 	blocks := &notionapi.AppendBlockChildrenRequest{}
 
