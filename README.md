@@ -23,6 +23,7 @@ Say goodbye to switching apps or losing thoughts in the shuffle—Notion-Echo Bo
 - `/help` - Displays this help message;
 - `/register` - Register your Notion notebook in the bot;
 - `/note [text]` - Write the text of the note on Notion or save the file*;
+- `/note [--page "page_name"] [text]` - Write the note containing the text, on the page in the parenthesis ("");
 - `/defaultpage [page_name]` - Sets the default Notion page for your notes. Ensure this is an authorized page during registration;
 - `/getdefaultpage` - Get default page for your user.
 - `/deauthorize` - I will forget you
