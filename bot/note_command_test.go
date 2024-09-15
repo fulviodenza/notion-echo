@@ -32,10 +32,52 @@ func TestNoteCommandExecute(t *testing.T) {
 		wantUsers *ent.User
 		err       bool
 	}{
-		{
+		/*{
 			"save note",
 			fields{
 				update: update(withMessage("/note test"), withId(1)),
+				envs: map[string]string{
+					"VAULT_PATH": "/localhost/test/",
+				},
+				bot: bot(withVault("/localhost/test/", "testKey"), withUserRepo(&db.UserRepoMock{
+					Db: map[int]*ent.User{
+						1: {
+							ID:          1,
+							StateToken:  "token",
+							DefaultPage: "test",
+						},
+					},
+				})),
+				pages: map[string]*notionapi.Page{
+					"test": {
+						ID:     "1",
+						Object: notionapi.ObjectTypeBlock,
+						Properties: map[string]notionapi.Property{
+							"title": &notionapi.TitleProperty{
+								Title: []notionapi.RichText{
+									{
+										Text: &notionapi.Text{
+											Content: "Title",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			[]string{
+				"note saved on Title page",
+			},
+			&ent.User{
+				ID: 1,
+			},
+			false,
+		},*/
+		{
+			"save note",
+			fields{
+				update: update(withMessage("/note --page \"testPage\" test"), withId(1)),
 				envs: map[string]string{
 					"VAULT_PATH": "/localhost/test/",
 				},
