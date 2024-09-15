@@ -54,7 +54,7 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
 	}
 	var pageName string
 	var noteText string
-	if !strings.Contains(messageText, "--page") {
+	if !strings.Contains(messageText, "—page") {
 		noteText = strings.Replace(messageText, "/note", "", 1)
 		if noteText == "" {
 			cc.SetUserState(id, "/note")
