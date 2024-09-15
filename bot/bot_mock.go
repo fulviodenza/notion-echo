@@ -7,6 +7,7 @@ import (
 	"github.com/SakoDroid/telego/v2/objects"
 	"github.com/notion-echo/adapters/db"
 	"github.com/notion-echo/adapters/ent"
+	"github.com/notion-echo/adapters/r2"
 	"github.com/notion-echo/adapters/vault"
 	"github.com/notion-echo/bot/types"
 	"github.com/sirupsen/logrus"
@@ -42,6 +43,8 @@ func (b *MockBot) GetHelpMessage() string {
 }
 
 func (b *MockBot) SetTelegramClient(bot bt.Bot) {}
+
+func (b *MockBot) SetR2Client(bot r2.R2Interface) {}
 
 func (b *MockBot) GetTelegramClient() *bt.Bot {
 	return nil

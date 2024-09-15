@@ -296,9 +296,6 @@ func (b *Bot) GetTelegramClient() *bt.Bot {
 func (b *Bot) SetR2Client(bot r2.R2Interface) {
 	b.R2Client = bot
 }
-func (b *Bot) GetR2Client() r2.R2Interface {
-	return b.R2Client
-}
 
 func (b *Bot) SetUserRepo(db db.UserRepoInterface) {
 	b.UserRepo = db
