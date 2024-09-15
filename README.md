@@ -55,3 +55,7 @@ We welcome contributions of all kinds from the community. If you're interested i
   
 ## Known issues
 - transcribe markdown
+
+## Contributors:
+- @Diegghh
+- @Ladvace
