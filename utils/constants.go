@@ -29,9 +29,10 @@ Here is how to get started:
 	
 - /help - Displays this help message;
 - /register - Register your Notion notebook in the bot;
-- /note text - Write the text of the note or upload a pdf, jpg, jpeg or png (if it's an image, please ensure to send it without compression or it will upload a blurred image on notion) on Notion;
+- /note text - Write the text of the note or upload a pdf, jpg, jpeg or png (if it's an image, please ensure to send it without compression or it will upload a blurred image on notion);
+- /note --page "page_name" text - Write the note containing the text, on the page in the parenthesis ("");
 - /defaultpage page_name - Sets the default Notion page for your notes. Ensure this is an authorized page during registration;
-- /getdefaultpage - Get default page for your user;
+- /getdefaultpage - Get default page you selected with /defaultpage page_name;
 - /deauthorize - I will forget you;
 	
 Need a bit more guidance? Type /help anytime to see what I can do for you or look at the Github repository: https://github.com/fulviodenza/notion-echo or join the official group: %s and ask to the developers

@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/notion-echo/adapters/ent"
-	notionerrors "github.com/notion-echo/errors"
 )
 
 var _ UserRepoInterface = (*UserRepoMock)(nil)
@@ -76,7 +75,7 @@ func (ur *UserRepoMock) GetDefaultPage(ctx context.Context, id int) (string, err
 		return p.DefaultPage, nil
 	}
 
-	return "", notionerrors.ErrPageNotFound
+	return "", &ent.NotFoundError{}
 }
 func (ur *UserRepoMock) DeleteUser(ctx context.Context, id int) error {
 	if ur.Err != nil {

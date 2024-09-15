@@ -2,11 +2,10 @@ package bot
 
 import (
 	"context"
+	"errors"
 	"os"
 	"sort"
 	"testing"
-
-	"errors"
 
 	"github.com/SakoDroid/telego/v2/objects"
 	"github.com/google/go-cmp/cmp"
@@ -75,6 +74,156 @@ func TestNoteCommandExecute(t *testing.T) {
 			false,
 		},
 		{
+			"save note",
+			fields{
+				update: update(withMessage("/note --page \"testPage\" test"), withId(1)),
+				envs: map[string]string{
+					"VAULT_PATH": "/localhost/test/",
+				},
+				bot: bot(withVault("/localhost/test/", "testKey"), withUserRepo(&db.UserRepoMock{
+					Db: map[int]*ent.User{
+						1: {
+							ID:          1,
+							StateToken:  "token",
+							DefaultPage: "test",
+						},
+					},
+				})),
+				pages: map[string]*notionapi.Page{
+					"test": {
+						ID:     "1",
+						Object: notionapi.ObjectTypeBlock,
+						Properties: map[string]notionapi.Property{
+							"title": &notionapi.TitleProperty{
+								Title: []notionapi.RichText{
+									{
+										Text: &notionapi.Text{
+											Content: "Title",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			[]string{
+				"note saved on Title page",
+			},
+			&ent.User{
+				ID: 1,
+			},
+			false,
+		},
+		{
+			"save note with no default page in db",
+			fields{
+				update: update(withMessage("/note --page \"testPage\" test"), withId(1)),
+				envs: map[string]string{
+					"VAULT_PATH": "/localhost/test/",
+				},
+				bot: bot(withVault("/localhost/test/", "testKey"), withUserRepo(&db.UserRepoMock{
+					Db: map[int]*ent.User{},
+				})),
+				pages: map[string]*notionapi.Page{
+					"test": {
+						ID:     "1",
+						Object: notionapi.ObjectTypeBlock,
+						Properties: map[string]notionapi.Property{
+							"title": &notionapi.TitleProperty{
+								Title: []notionapi.RichText{
+									{
+										Text: &notionapi.Text{
+											Content: "Title",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			[]string{
+				"note saved on Title page",
+			},
+			&ent.User{
+				ID: 1,
+			},
+			false,
+		},
+		{
+			"save note with no page selected and no page defaulted",
+			fields{
+				update: update(withMessage("/note test"), withId(1)),
+				envs: map[string]string{
+					"VAULT_PATH": "/localhost/test/",
+				},
+				bot: bot(withVault("/localhost/test/", "testKey"), withUserRepo(&db.UserRepoMock{
+					Db: map[int]*ent.User{},
+				})),
+				pages: map[string]*notionapi.Page{
+					"test": {
+						ID:     "1",
+						Object: notionapi.ObjectTypeBlock,
+						Properties: map[string]notionapi.Property{
+							"title": &notionapi.TitleProperty{
+								Title: []notionapi.RichText{
+									{
+										Text: &notionapi.Text{
+											Content: "Title",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			[]string{
+				"note saved on Title page",
+			},
+			&ent.User{
+				ID: 1,
+			},
+			false,
+		},
+		{
+			"save note with page flag and no note",
+			fields{
+				update: update(withMessage("/note --page \"Test\""), withId(1)),
+				envs: map[string]string{
+					"VAULT_PATH": "/localhost/test/",
+				},
+				bot: bot(withVault("/localhost/test/", "testKey"), withUserRepo(&db.UserRepoMock{
+					Db: map[int]*ent.User{},
+				})),
+				pages: map[string]*notionapi.Page{
+					"test": {
+						ID:     "1",
+						Object: notionapi.ObjectTypeBlock,
+						Properties: map[string]notionapi.Property{
+							"title": &notionapi.TitleProperty{
+								Title: []notionapi.RichText{
+									{
+										Text: &notionapi.Text{
+											Content: "Title",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			[]string{
+				"write your note in the next message",
+			},
+			&ent.User{
+				ID: 1,
+			},
+			false,
+		},
+		{
 			"save note with next message",
 			fields{
 				update: update(withMessage("/note"), withId(1)),
@@ -125,24 +274,7 @@ func TestNoteCommandExecute(t *testing.T) {
 				bot: bot(withVault("/localhost/test/", "testKey")),
 			},
 			[]string{
-				boterrors.ErrPageNotFound.Error(),
-			},
-			&ent.User{
-				ID: 1,
-			},
-			false,
-		},
-		{
-			"default page not found",
-			fields{
-				update: update(withMessage("/note test"), withId(1)),
-				envs: map[string]string{
-					"VAULT_PATH": "/localhost/test/",
-				},
-				bot: bot(withVault("/localhost/test/", "testKey")),
-			},
-			[]string{
-				boterrors.ErrPageNotFound.Error(),
+				boterrors.ErrBotNotAuthorized.Error(),
 			},
 			&ent.User{
 				ID: 1,
