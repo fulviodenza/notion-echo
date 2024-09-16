@@ -2,10 +2,13 @@ package bot
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/SakoDroid/telego/v2/objects"
 	"github.com/notion-echo/bot/types"
 	"github.com/notion-echo/errors"
+	"github.com/notion-echo/metrics"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 )
 
@@ -29,6 +32,8 @@ func (dc *DeauthorizeCommand) Execute(ctx context.Context, update *objects.Updat
 
 	id := update.Message.Chat.Id
 	dc.Logger().Infof("[DeauthorizeCommand] got deauthorize request from %d", id)
+
+	metrics.DeauthorizeCount.With(prometheus.Labels{"id": fmt.Sprint(id)}).Inc()
 
 	err := dc.GetUserRepo().DeleteUser(ctx, id)
 	if err != nil {

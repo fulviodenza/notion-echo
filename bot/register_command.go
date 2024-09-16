@@ -9,6 +9,8 @@ import (
 	"github.com/SakoDroid/telego/v2/objects"
 	"github.com/notion-echo/bot/types"
 	"github.com/notion-echo/errors"
+	"github.com/notion-echo/metrics"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 )
 
@@ -30,6 +32,8 @@ func NewRegisterCommand(bot types.IBot, generateStateToken func() (string, error
 func (rc *RegisterCommand) Execute(ctx context.Context, update *objects.Update) {
 	id := update.Message.Chat.Id
 	rc.Logger().Infof("[RegisterCommand] got registration request from %d", id)
+
+	metrics.RegisterCount.With(prometheus.Labels{"id": fmt.Sprint(id)}).Inc()
 
 	stateToken, err := rc.generateStateToken()
 	if err != nil {
