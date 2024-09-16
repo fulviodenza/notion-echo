@@ -76,7 +76,7 @@ func TestNoteCommandExecute(t *testing.T) {
 		{
 			"save note",
 			fields{
-				update: update(withMessage("/note --page \"testPage\" test"), withId(1)),
+				update: update(withMessage("/note —page \"testPage\" test"), withId(1)),
 				envs: map[string]string{
 					"VAULT_PATH": "/localhost/test/",
 				},
@@ -118,7 +118,7 @@ func TestNoteCommandExecute(t *testing.T) {
 		{
 			"save note with no default page in db",
 			fields{
-				update: update(withMessage("/note --page \"testPage\" test"), withId(1)),
+				update: update(withMessage("/note —page \"testPage\" test"), withId(1)),
 				envs: map[string]string{
 					"VAULT_PATH": "/localhost/test/",
 				},
@@ -190,7 +190,7 @@ func TestNoteCommandExecute(t *testing.T) {
 		{
 			"save note with page flag and no note",
 			fields{
-				update: update(withMessage("/note --page \"Test\""), withId(1)),
+				update: update(withMessage("/note —page \"Test\""), withId(1)),
 				envs: map[string]string{
 					"VAULT_PATH": "/localhost/test/",
 				},
