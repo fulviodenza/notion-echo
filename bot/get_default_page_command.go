@@ -7,6 +7,8 @@ import (
 	"github.com/SakoDroid/telego/v2/objects"
 	"github.com/notion-echo/bot/types"
 	"github.com/notion-echo/errors"
+	"github.com/notion-echo/metrics"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 )
 
@@ -30,6 +32,8 @@ func (dc *GetDefaultPageCommand) Execute(ctx context.Context, update *objects.Up
 
 	id := update.Message.Chat.Id
 	dc.Logger().Infof("[GetDefaultPageCommand] got getdefaultpage request from %d", id)
+
+	metrics.GetDefaultPageCount.With(prometheus.Labels{"id": fmt.Sprint(id)}).Inc()
 
 	defaultPage, err := dc.GetUserRepo().GetDefaultPage(ctx, update.Message.Chat.Id)
 	if err != nil {

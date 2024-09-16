@@ -2,9 +2,12 @@ package bot
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/SakoDroid/telego/v2/objects"
 	"github.com/notion-echo/bot/types"
+	"github.com/notion-echo/metrics"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 )
 
@@ -27,7 +30,11 @@ func (hc *HelpCommand) Execute(ctx context.Context, update *objects.Update) {
 	}
 	helpMessage := hc.GetHelpMessage()
 
-	err := hc.SendMessage(helpMessage, update.Message.Chat.Id, true, true)
+	id := update.Message.Chat.Id
+
+	metrics.HelpCount.With(prometheus.Labels{"id": fmt.Sprint(id)}).Inc()
+
+	err := hc.SendMessage(helpMessage, id, true, true)
 	if err != nil {
 		hc.Logger().WithFields(logrus.Fields{"error": err}).Error("help error")
 	}

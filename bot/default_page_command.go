@@ -11,7 +11,9 @@ import (
 	"github.com/notion-echo/adapters/notion"
 	"github.com/notion-echo/bot/types"
 	"github.com/notion-echo/errors"
+	"github.com/notion-echo/metrics"
 	"github.com/notion-echo/utils"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 )
 
@@ -89,5 +91,6 @@ func (dc *DefaultPageCommand) Execute(ctx context.Context, update *objects.Updat
 		dc.SendMessage(errors.ErrSetDefaultPage.Error(), id, false, true)
 		return
 	}
+	metrics.DefaultPageCount.With(prometheus.Labels{"id": fmt.Sprint(id), "page": string(p.ID)}).Inc()
 	dc.SendMessage(fmt.Sprintf("page %s set as default", selectedPage), id, false, true)
 }
