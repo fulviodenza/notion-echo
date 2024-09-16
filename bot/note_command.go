@@ -48,7 +48,7 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
 	id := update.Message.Chat.Id
 	cc.Logger().Infof("[NoteCommand] got note from %d", id)
 
-	metrics.NoteCount.With(prometheus.Labels{"id": string(id)}).Inc()
+	metrics.NoteCount.With(prometheus.Labels{"id": fmt.Sprint(id)}).Inc()
 
 	blocks := &notionapi.AppendBlockChildrenRequest{}
 

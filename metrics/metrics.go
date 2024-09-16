@@ -7,7 +7,7 @@ import (
 
 var (
 	NoteCount = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "notion-echo",
+		Namespace: "notion_echo",
 		Subsystem: "commands",
 		Name:      "note",
 		Help:      "note command gauge",
