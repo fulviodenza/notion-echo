@@ -40,8 +40,6 @@ func (dc *DefaultPageCommand) Execute(ctx context.Context, update *objects.Updat
 	id := update.Message.Chat.Id
 	dc.Logger().Infof("[DefaultPageCommand] got defaultpage request from %d", id)
 
-	metrics.DefaultPageCount.With(prometheus.Labels{"id": fmt.Sprint(id)}).Inc()
-
 	encKey, err := dc.GetVaultClient().GetKey(os.Getenv("VAULT_PATH"))
 	if err != nil {
 		dc.Logger().WithFields(logrus.Fields{"error": err}).Error("default page error")
@@ -93,5 +91,6 @@ func (dc *DefaultPageCommand) Execute(ctx context.Context, update *objects.Updat
 		dc.SendMessage(errors.ErrSetDefaultPage.Error(), id, false, true)
 		return
 	}
+	metrics.DefaultPageCount.With(prometheus.Labels{"id": fmt.Sprint(id), "page": string(p.ID)}).Inc()
 	dc.SendMessage(fmt.Sprintf("page %s set as default", selectedPage), id, false, true)
 }
