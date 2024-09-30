@@ -11,6 +11,8 @@ var (
 	// UsersColumns holds the columns for the "users" table.
 	UsersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "state_token", Type: field.TypeString, Default: ""},
 		{Name: "notion_token", Type: field.TypeString, Default: ""},
 		{Name: "default_page", Type: field.TypeString, Default: ""},

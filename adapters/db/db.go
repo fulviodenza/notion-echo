@@ -10,6 +10,7 @@ import (
 	entsql "entgo.io/ent/dialect/sql"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/notion-echo/adapters/ent"
+	"github.com/notion-echo/adapters/ent/migrate"
 	"github.com/sirupsen/logrus"
 )
 
@@ -40,7 +41,11 @@ func SetupAndConnectDatabase(baseConnectionString string, logger *logrus.Logger)
 	drv := entsql.OpenDB(dialect.Postgres, db)
 	client := ent.NewClient(ent.Driver(drv))
 
-	if err := client.Schema.Create(context.Background()); err != nil {
+	if err := client.Schema.Create(
+		context.Background(),
+		migrate.WithDropIndex(true),
+		migrate.WithDropColumn(true),
+	); err != nil {
 		logger.WithFields(logrus.Fields{
 			"error": err,
 		}).Fatalf("failed creating schema resources: %v", err)
