@@ -3,6 +3,7 @@ package schema
 import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/field"
+	mixin "github.com/notion-echo/adapters/ent/mixin"
 )
 
 // User holds the schema definition for the User entity.
@@ -20,6 +21,12 @@ func (User) Fields() []ent.Field {
 			Default(""),
 		field.String("default_page").
 			Default(""),
+	}
+}
+
+func (User) Mixin() []ent.Mixin {
+	return []ent.Mixin{
+		mixin.TimeMixin{},
 	}
 }
 
