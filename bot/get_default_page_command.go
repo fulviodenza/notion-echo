@@ -43,5 +43,5 @@ func (dc *GetDefaultPageCommand) Execute(ctx context.Context, update *objects.Up
 		dc.SendMessage(errors.ErrPageNotFound.Error(), id, false, true)
 		return
 	}
-	dc.SendMessage(fmt.Sprintf("your default page is **%s**", defaultPage), id, true, true)
+	dc.SendMessage(fmt.Sprintf("your default page is *bold *%s*", defaultPage), id, true, true)
 }
