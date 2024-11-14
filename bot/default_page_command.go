@@ -3,14 +3,13 @@ package bot
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/SakoDroid/telego/v2/objects"
 	"github.com/notion-echo/adapters/db"
 	"github.com/notion-echo/adapters/notion"
 	"github.com/notion-echo/bot/types"
-	"github.com/notion-echo/errors"
+	notionerrors "github.com/notion-echo/errors"
 	"github.com/notion-echo/metrics"
 	"github.com/notion-echo/utils"
 	"github.com/prometheus/client_golang/prometheus"
@@ -21,10 +20,10 @@ var _ types.ICommand = (*DefaultPageCommand)(nil)
 
 type DefaultPageCommand struct {
 	types.IBot
-	buildNotionClient func(ctx context.Context, userRepo db.UserRepoInterface, id int, encKey []byte) (notion.NotionInterface, error)
+	buildNotionClient func(ctx context.Context, userRepo db.UserRepoInterface, id int, notionToken string) (notion.NotionInterface, error)
 }
 
-func NewDefaultPageCommand(bot types.IBot, buildNotionClient func(ctx context.Context, userRepo db.UserRepoInterface, id int, encKey []byte) (notion.NotionInterface, error)) types.Command {
+func NewDefaultPageCommand(bot types.IBot, buildNotionClient func(ctx context.Context, userRepo db.UserRepoInterface, id int, notionToken string) (notion.NotionInterface, error)) types.Command {
 	hc := DefaultPageCommand{
 		IBot:              bot,
 		buildNotionClient: buildNotionClient,
@@ -40,16 +39,16 @@ func (dc *DefaultPageCommand) Execute(ctx context.Context, update *objects.Updat
 	id := update.Message.Chat.Id
 	dc.Logger().Infof("[DefaultPageCommand] got defaultpage request from %d", id)
 
-	encKey, err := dc.GetVaultClient().GetKey(os.Getenv("VAULT_PATH"))
+	notionToken, err := dc.GetUserRepo().GetNotionTokenByID(ctx, id)
 	if err != nil {
-		dc.Logger().WithFields(logrus.Fields{"error": err}).Error("default page error")
-		dc.SendMessage(errors.ErrNotRegistered.Error(), id, false, true)
+		dc.Logger().WithFields(logrus.Fields{"error": err}).Error("note error")
+		dc.SendMessage(notionerrors.ErrTokenNotFound.Error(), id, false, true)
 		return
 	}
-	notionClient, err := dc.buildNotionClient(ctx, dc.GetUserRepo(), update.Message.Chat.Id, encKey)
+	notionClient, err := dc.buildNotionClient(ctx, dc.GetUserRepo(), id, notionToken)
 	if err != nil {
 		dc.Logger().WithFields(logrus.Fields{"error": err}).Error("default page error")
-		dc.SendMessage(errors.ErrSetDefaultPage.Error(), id, false, true)
+		dc.SendMessage(notionerrors.ErrSetDefaultPage.Error(), id, false, true)
 		return
 	}
 
@@ -77,18 +76,18 @@ func (dc *DefaultPageCommand) Execute(ctx context.Context, update *objects.Updat
 
 	if len(pages) == 0 {
 		dc.Logger().WithFields(logrus.Fields{"error": err}).Error("note error")
-		dc.SendMessage(errors.ErrBotNotAuthorized.Error(), id, false, true)
+		dc.SendMessage(notionerrors.ErrBotNotAuthorized.Error(), id, false, true)
 		return
 	}
 	p := pages[0]
 	if p.ID == "" || p.Object == "" {
-		dc.SendMessage(errors.ErrPageNotFound.Error(), id, false, true)
+		dc.SendMessage(notionerrors.ErrPageNotFound.Error(), id, false, true)
 		return
 	}
 	err = dc.GetUserRepo().SetDefaultPage(ctx, update.Message.Chat.Id, selectedPage)
 	if err != nil {
 		dc.Logger().WithFields(logrus.Fields{"error": err}).Error("default page error")
-		dc.SendMessage(errors.ErrSetDefaultPage.Error(), id, false, true)
+		dc.SendMessage(notionerrors.ErrSetDefaultPage.Error(), id, false, true)
 		return
 	}
 	metrics.DefaultPageCount.With(prometheus.Labels{"id": fmt.Sprint(id), "page": string(p.ID)}).Inc()

@@ -29,10 +29,10 @@ var BotEmoji = notionapi.Emoji("🤖")
 
 type NoteCommand struct {
 	types.IBot
-	buildNotionClient func(ctx context.Context, userRepo db.UserRepoInterface, id int, encKey []byte) (notion.NotionInterface, error)
+	buildNotionClient func(ctx context.Context, userRepo db.UserRepoInterface, id int, token string) (notion.NotionInterface, error)
 }
 
-func NewNoteCommand(bot types.IBot, buildNotionClient func(ctx context.Context, userRepo db.UserRepoInterface, id int, encKey []byte) (notion.NotionInterface, error)) types.Command {
+func NewNoteCommand(bot types.IBot, buildNotionClient func(ctx context.Context, userRepo db.UserRepoInterface, id int, token string) (notion.NotionInterface, error)) types.Command {
 	hc := NoteCommand{
 		IBot:              bot,
 		buildNotionClient: buildNotionClient,
@@ -114,13 +114,13 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
 
 	blocks.Children = append(blocks.Children, buildCalloutBlock(noteText, children))
 
-	encKey, err := cc.GetVaultClient().GetKey(os.Getenv("VAULT_PATH"))
+	notionToken, err := cc.GetUserRepo().GetNotionTokenByID(ctx, id)
 	if err != nil {
 		cc.Logger().WithFields(logrus.Fields{"error": err}).Error("note error")
-		cc.SendMessage(notionerrors.ErrInternal.Error(), id, false, true)
+		cc.SendMessage(notionerrors.ErrTokenNotFound.Error(), id, false, true)
 		return
 	}
-	notionClient, err := cc.buildNotionClient(ctx, cc.GetUserRepo(), id, encKey)
+	notionClient, err := cc.buildNotionClient(ctx, cc.GetUserRepo(), id, notionToken)
 	if err != nil {
 		cc.Logger().WithFields(logrus.Fields{"error": err}).Error("note error")
 		cc.SendMessage(notionerrors.ErrNotRegistered.Error(), id, false, true)

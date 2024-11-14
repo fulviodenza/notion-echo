@@ -35,10 +35,8 @@ func TestNoteCommandExecute(t *testing.T) {
 			"save note",
 			fields{
 				update: update(withMessage("/note test"), withId(1)),
-				envs: map[string]string{
-					"VAULT_PATH": "/localhost/test/",
-				},
-				bot: bot(withVault("/localhost/test/", "testKey"), withUserRepo(&db.UserRepoMock{
+				envs:   map[string]string{},
+				bot: bot(withUserRepo(&db.UserRepoMock{
 					Db: map[int]*ent.User{
 						1: {
 							ID:          1,
@@ -77,10 +75,8 @@ func TestNoteCommandExecute(t *testing.T) {
 			"save note",
 			fields{
 				update: update(withMessage("/note —page \"testPage\" test"), withId(1)),
-				envs: map[string]string{
-					"VAULT_PATH": "/localhost/test/",
-				},
-				bot: bot(withVault("/localhost/test/", "testKey"), withUserRepo(&db.UserRepoMock{
+				envs:   map[string]string{},
+				bot: bot(withUserRepo(&db.UserRepoMock{
 					Db: map[int]*ent.User{
 						1: {
 							ID:          1,
@@ -119,10 +115,8 @@ func TestNoteCommandExecute(t *testing.T) {
 			"save note with no default page in db",
 			fields{
 				update: update(withMessage("/note —page \"testPage\" test"), withId(1)),
-				envs: map[string]string{
-					"VAULT_PATH": "/localhost/test/",
-				},
-				bot: bot(withVault("/localhost/test/", "testKey"), withUserRepo(&db.UserRepoMock{
+				envs:   map[string]string{},
+				bot: bot(withUserRepo(&db.UserRepoMock{
 					Db: map[int]*ent.User{},
 				})),
 				pages: map[string]*notionapi.Page{
@@ -155,10 +149,8 @@ func TestNoteCommandExecute(t *testing.T) {
 			"save note with no page selected and no page defaulted",
 			fields{
 				update: update(withMessage("/note test"), withId(1)),
-				envs: map[string]string{
-					"VAULT_PATH": "/localhost/test/",
-				},
-				bot: bot(withVault("/localhost/test/", "testKey"), withUserRepo(&db.UserRepoMock{
+				envs:   map[string]string{},
+				bot: bot(withUserRepo(&db.UserRepoMock{
 					Db: map[int]*ent.User{},
 				})),
 				pages: map[string]*notionapi.Page{
@@ -191,10 +183,8 @@ func TestNoteCommandExecute(t *testing.T) {
 			"save note with page flag and no note",
 			fields{
 				update: update(withMessage("/note —page \"Test\""), withId(1)),
-				envs: map[string]string{
-					"VAULT_PATH": "/localhost/test/",
-				},
-				bot: bot(withVault("/localhost/test/", "testKey"), withUserRepo(&db.UserRepoMock{
+				envs:   map[string]string{},
+				bot: bot(withUserRepo(&db.UserRepoMock{
 					Db: map[int]*ent.User{},
 				})),
 				pages: map[string]*notionapi.Page{
@@ -227,10 +217,8 @@ func TestNoteCommandExecute(t *testing.T) {
 			"save note with next message",
 			fields{
 				update: update(withMessage("/note"), withId(1)),
-				envs: map[string]string{
-					"VAULT_PATH": "/localhost/test/",
-				},
-				bot: bot(withVault("/localhost/test/", "testKey")),
+				envs:   map[string]string{},
+				bot:    bot(),
 				pages: map[string]*notionapi.Page{
 					"test": {
 						ID:     "1",
@@ -249,11 +237,9 @@ func TestNoteCommandExecute(t *testing.T) {
 		{
 			"user not registered",
 			fields{
-				update: update(withMessage("/note test"), withId(1)),
-				envs: map[string]string{
-					"VAULT_PATH": "/localhost/test/",
-				},
-				bot:                  bot(withVault("/localhost/test/", "testKey")),
+				update:               update(withMessage("/note test"), withId(1)),
+				envs:                 map[string]string{},
+				bot:                  bot(),
 				buildNotionClientErr: errors.New(""),
 			},
 			[]string{
@@ -268,27 +254,11 @@ func TestNoteCommandExecute(t *testing.T) {
 			"user notion page not found",
 			fields{
 				update: update(withMessage("/note test"), withId(1)),
-				envs: map[string]string{
-					"VAULT_PATH": "/localhost/test/",
-				},
-				bot: bot(withVault("/localhost/test/", "testKey")),
+				envs:   map[string]string{},
+				bot:    bot(),
 			},
 			[]string{
 				boterrors.ErrBotNotAuthorized.Error(),
-			},
-			&ent.User{
-				ID: 1,
-			},
-			false,
-		},
-		{
-			"vault env var not found",
-			fields{
-				update: update(withMessage("/note test"), withId(1)),
-				bot:    bot(withVault("/localhost/test/", "testKey")),
-			},
-			[]string{
-				boterrors.ErrInternal.Error(),
 			},
 			&ent.User{
 				ID: 1,
@@ -302,7 +272,7 @@ func TestNoteCommandExecute(t *testing.T) {
 				os.Setenv(k, v)
 			}
 
-			ec := NewNoteCommand(tt.fields.bot, func(ctx context.Context, userRepo db.UserRepoInterface, id int, encKey []byte) (notion.NotionInterface, error) {
+			ec := NewNoteCommand(tt.fields.bot, func(ctx context.Context, userRepo db.UserRepoInterface, id int, token string) (notion.NotionInterface, error) {
 				return notion.NewNotionMock(tt.fields.pages, tt.fields.bot.Err), tt.fields.buildNotionClientErr
 			})
 

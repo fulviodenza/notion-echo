@@ -2,14 +2,11 @@ package bot
 
 import (
 	"context"
-	"errors"
 	"sort"
 	"testing"
 
 	"github.com/SakoDroid/telego/v2/objects"
 	"github.com/google/go-cmp/cmp"
-	"github.com/notion-echo/adapters/db"
-	"github.com/notion-echo/adapters/ent"
 	notionerrors "github.com/notion-echo/errors"
 )
 
@@ -28,15 +25,7 @@ func TestDeauthorizeCommandExecute(t *testing.T) {
 			"deauthorize",
 			fields{
 				update: update(withMessage("/deauthorize"), withId(1)),
-				bot: bot(withVault("/localhost/test/", "testKey"), withUserRepo(&db.UserRepoMock{
-					Db: map[int]*ent.User{
-						1: {
-							ID:          1,
-							StateToken:  "token",
-							DefaultPage: "test",
-						},
-					},
-				})),
+				bot:    bot(),
 			},
 			[]string{"deleted user"},
 			false,
@@ -45,16 +34,7 @@ func TestDeauthorizeCommandExecute(t *testing.T) {
 			"error deauthorizing",
 			fields{
 				update: update(withMessage("/deauthorize"), withId(1)),
-				bot: bot(withVault("/localhost/test/", "testKey"), withUserRepo(&db.UserRepoMock{
-					Db: map[int]*ent.User{
-						1: {
-							ID:          1,
-							StateToken:  "token",
-							DefaultPage: "test",
-						},
-					},
-					Err: errors.New(""),
-				})),
+				bot:    bot(),
 			},
 			[]string{notionerrors.ErrDeleting.Error()},
 			true,

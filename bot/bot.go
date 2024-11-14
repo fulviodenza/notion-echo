@@ -15,7 +15,6 @@ import (
 	"github.com/notion-echo/adapters/db"
 	"github.com/notion-echo/adapters/notion"
 	"github.com/notion-echo/adapters/r2"
-	vaultadapter "github.com/notion-echo/adapters/vault"
 	"github.com/notion-echo/bot/types"
 	"github.com/notion-echo/oauth"
 	"github.com/notion-echo/state"
@@ -35,7 +34,6 @@ type Bot struct {
 	TelegramClient bt.Bot
 	NotionClient   map[string]string
 	UserRepo       db.UserRepoInterface
-	VaultClient    vaultadapter.VaultInterface
 	R2Client       r2.R2Interface
 	helpMessage    string
 	logger         *logrus.Logger
@@ -47,13 +45,9 @@ type Bot struct {
 var _ types.IBot = (*Bot)(nil)
 
 var (
-	telegramToken   = os.Getenv(utils.TELEGRAM_TOKEN)
-	databaseUrl     = os.Getenv(utils.DATABASE_URL)
-	vaultSecretPath = os.Getenv(utils.VAULT_PATH)
-	vaultAddr       = os.Getenv(utils.VAULT_ADDR)
-	vaultSecretKey  = os.Getenv(utils.VAULT_SECRET_KEY)
-	vaultToken      = os.Getenv(utils.VAULT_TOKEN)
-	port            = os.Getenv(utils.PORT)
+	telegramToken = os.Getenv(utils.TELEGRAM_TOKEN)
+	databaseUrl   = os.Getenv(utils.DATABASE_URL)
+	port          = os.Getenv(utils.PORT)
 )
 
 func NewBotWithConfig() (*Bot, error) {
@@ -79,10 +73,6 @@ func NewBotWithConfig() (*Bot, error) {
 		return nil, err
 	}
 	bot.SetUserRepo(userRepo)
-
-	vaultClient := vaultadapter.SetupVault(vaultAddr, vaultToken, bot.Logger())
-	bot.SetVaultClient(vaultClient)
-
 	bot.loadHelpMessage()
 
 	botConfig := &cfg.BotConfigs{
@@ -199,17 +189,7 @@ func (b *Bot) RunOauth2Endpoint() {
 		}
 
 		state := c.QueryParam("state")
-		encKey, err := b.GetVaultClient().GetKey(os.Getenv("VAULT_PATH"))
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, err.Error())
-			return nil
-		}
-		notionTokenEnc, err := utils.EncryptString(notionToken, encKey)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, err.Error())
-			return nil
-		}
-		_, err = b.GetUserRepo().SaveNotionTokenByStateToken(context.Background(), notionTokenEnc, state)
+		_, err = b.GetUserRepo().SaveNotionTokenByStateToken(context.Background(), notionToken, state)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, err.Error())
 			return nil
@@ -304,23 +284,6 @@ func (b *Bot) GetUserRepo() db.UserRepoInterface {
 	return b.UserRepo
 }
 
-func (b *Bot) SetVaultClient(v vaultadapter.VaultInterface) {
-	b.VaultClient = v
-	encryptionKey, err := generateKey()
-	if err != nil {
-		b.Logger().WithFields(logrus.Fields{"error": err}).Fatal("error generating key")
-	}
-	encKeyStr := base64.StdEncoding.EncodeToString(encryptionKey)
-
-	_, err = b.WriteOrGetSecret(vaultSecretPath, vaultSecretKey, encKeyStr)
-	if err != nil {
-		b.Logger().WithFields(logrus.Fields{"error": err}).Fatal("error writing secret to Vault")
-	}
-}
-func (b *Bot) GetVaultClient() vaultadapter.VaultInterface {
-	return b.VaultClient
-}
-
 func (b *Bot) SetNotionUser(token string) {
 	if b.NotionClient == nil {
 		b.NotionClient = make(map[string]string)
@@ -356,44 +319,12 @@ func generateStateToken() (string, error) {
 	return stateToken, nil
 }
 
-func generateKey() ([]byte, error) {
-	key := make([]byte, 32)
-	if _, err := rand.Read(key); err != nil {
-		return nil, err
-	}
-	return key, nil
-}
-
-func (b *Bot) WriteOrGetSecret(path string, key string, value string) (string, error) {
-	res, err := b.VaultClient.GetKey(path)
-	if err != nil || res == nil {
-		b.Logger().Infof("failed to read secret: %v, assuming it does not exist and creating it.", err)
-
-		data := map[string]interface{}{
-			key: value,
-		}
-		_, err = b.VaultClient.Logical().Write(path, data)
-		if err != nil {
-			return "", fmt.Errorf("failed to write secret to Vault: %v", err)
-		}
-		b.Logger().Infof("secret written to path %s.", path)
-	} else {
-		b.Logger().Infof("secret at path %s already exists, not overwriting.", path)
-	}
-
-	return string(res), nil
-}
-
-func buildNotionClient(ctx context.Context, userRepo db.UserRepoInterface, id int, encKey []byte) (notion.NotionInterface, error) {
-	tokenEnc, err := userRepo.GetNotionTokenByID(ctx, id)
+func buildNotionClient(ctx context.Context, userRepo db.UserRepoInterface, id int, notionToken string) (notion.NotionInterface, error) {
+	token, err := userRepo.GetNotionTokenByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	token, err := utils.DecryptString(tokenEnc, encKey)
-	if err != nil {
-		return nil, err
-	}
 	return notion.NewNotionService(notionapi.NewClient(notionapi.Token(token))), nil
 }
 

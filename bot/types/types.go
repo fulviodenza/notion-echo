@@ -8,7 +8,6 @@ import (
 	"github.com/jomei/notionapi"
 	"github.com/notion-echo/adapters/db"
 	"github.com/notion-echo/adapters/r2"
-	"github.com/notion-echo/adapters/vault"
 	"github.com/sirupsen/logrus"
 )
 
@@ -41,8 +40,6 @@ type IBot interface {
 	GetNotionClient(userId string) string
 	SetUserRepo(db db.UserRepoInterface)
 	GetUserRepo() db.UserRepoInterface
-	GetVaultClient() vault.VaultInterface
-	SetVaultClient(v vault.VaultInterface)
 	Logger() *logrus.Logger
 	GetUserState(userID int) string
 	SetUserState(userID int, msg string)

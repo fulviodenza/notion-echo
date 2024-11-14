@@ -38,10 +38,8 @@ func TestDefaultPageCommandExecute(t *testing.T) {
 			"set default page",
 			fields{
 				update: update(withMessage("/defaultpage test"), withId(1)),
-				envs: map[string]string{
-					"VAULT_PATH": "/localhost/test/",
-				},
-				bot: bot(withVault("/localhost/test/", "testKey")),
+				envs:   map[string]string{},
+				bot:    bot(),
 				pages: map[string]*notionapi.Page{
 					"test": {
 						ID:     "1",
@@ -60,7 +58,7 @@ func TestDefaultPageCommandExecute(t *testing.T) {
 			fields{
 				update: update(withMessage("/defaultpage test"), withId(1)),
 				envs:   map[string]string{},
-				bot:    bot(withVault("/localhost/test/", "testKey")),
+				bot:    bot(),
 			},
 			[]string{"it looks like you are not registered, try running `/register` command first"},
 			&ent.User{
@@ -72,8 +70,8 @@ func TestDefaultPageCommandExecute(t *testing.T) {
 			"build notion client error",
 			fields{
 				update:               update(withMessage("/defaultpage test"), withId(1)),
-				envs:                 map[string]string{"VAULT_PATH": "/localhost/test/"},
-				bot:                  bot(withVault("/localhost/test/", "testKey")),
+				envs:                 map[string]string{},
+				bot:                  bot(),
 				buildNotionClientErr: errors.New(""),
 			},
 			[]string{notionerrors.ErrSetDefaultPage.Error()},
@@ -86,10 +84,8 @@ func TestDefaultPageCommandExecute(t *testing.T) {
 			"empty page id received",
 			fields{
 				update: update(withMessage("/defaultpage test"), withId(1)),
-				envs: map[string]string{
-					"VAULT_PATH": "/localhost/test/",
-				},
-				bot: bot(withVault("/localhost/test/", "testKey")),
+				envs:   map[string]string{},
+				bot:    bot(),
 				pages: map[string]*notionapi.Page{
 					"test": {
 						ID:     "",
@@ -107,10 +103,8 @@ func TestDefaultPageCommandExecute(t *testing.T) {
 			"empty page object received",
 			fields{
 				update: update(withMessage("/defaultpage test"), withId(1)),
-				envs: map[string]string{
-					"VAULT_PATH": "/localhost/test/",
-				},
-				bot: bot(withVault("/localhost/test/", "testKey")),
+				envs:   map[string]string{},
+				bot:    bot(),
 				pages: map[string]*notionapi.Page{
 					"test": {
 						ID:     "1",
@@ -128,10 +122,8 @@ func TestDefaultPageCommandExecute(t *testing.T) {
 			"no page in command",
 			fields{
 				update: update(withMessage("/defaultpage"), withId(1)),
-				envs: map[string]string{
-					"VAULT_PATH": "/localhost/test/",
-				},
-				bot: bot(withVault("/localhost/test/", "testKey")),
+				envs:   map[string]string{},
+				bot:    bot(),
 				pages: map[string]*notionapi.Page{
 					"test": {
 						ID:     "1",
@@ -149,14 +141,8 @@ func TestDefaultPageCommandExecute(t *testing.T) {
 			"error getting default page",
 			fields{
 				update: update(withMessage("/defaultpage test"), withId(1)),
-				envs: map[string]string{
-					"VAULT_PATH": "/localhost/test/",
-				},
-				bot: bot(withVault("/localhost/test/", "testKey"), withUserRepo(
-					&db.UserRepoMock{
-						Err: errors.New(""),
-					},
-				)),
+				envs:   map[string]string{},
+				bot:    bot(),
 				pages: map[string]*notionapi.Page{
 					"test": {
 						ID:     "1",
@@ -180,7 +166,7 @@ func TestDefaultPageCommandExecute(t *testing.T) {
 				os.Setenv(k, v)
 			}
 
-			ec := NewDefaultPageCommand(tt.fields.bot, func(ctx context.Context, userRepo db.UserRepoInterface, id int, encKey []byte) (notion.NotionInterface, error) {
+			ec := NewDefaultPageCommand(tt.fields.bot, func(ctx context.Context, userRepo db.UserRepoInterface, id int, notionToken string) (notion.NotionInterface, error) {
 				return notion.NewNotionMock(tt.fields.pages, tt.fields.bot.Err), tt.fields.buildNotionClientErr
 			})
 
