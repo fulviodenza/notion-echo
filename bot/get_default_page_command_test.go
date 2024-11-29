@@ -37,7 +37,7 @@ func TestGetDefaultPageCommandExecute(t *testing.T) {
 					},
 				})),
 			},
-			[]string{"your default page is **test**"},
+			[]string{"your default page is *bold *test*"},
 		},
 		{
 			"empty page",
