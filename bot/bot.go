@@ -31,7 +31,7 @@ import (
 
 type Bot struct {
 	sync.RWMutex
-	TelegramClient tgbotapi.BotAPI
+	TelegramClient *tgbotapi.BotAPI
 	NotionClient   map[string]string
 	UserRepo       db.UserRepoInterface
 	R2Client       r2.R2Interface
@@ -271,10 +271,10 @@ func (b *Bot) loadHelpMessage() {
 }
 
 func (b *Bot) SetTelegramClient(bot *tgbotapi.BotAPI) {
-	b.TelegramClient = *bot
+	b.TelegramClient = bot
 }
 func (b *Bot) GetTelegramClient() *tgbotapi.BotAPI {
-	return &b.TelegramClient
+	return b.TelegramClient
 }
 func (b *Bot) SetR2Client(bot r2.R2Interface) {
 	b.R2Client = bot
