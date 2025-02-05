@@ -199,6 +199,7 @@ func (b *Bot) RunOauth2Endpoint() {
 		state := c.QueryParam("state")
 
 		fmt.Printf("got state token: %s", state)
+		fmt.Printf("got notion token: %s", notionToken)
 		_, err = b.GetUserRepo().SaveNotionTokenByStateToken(context.Background(), notionToken, state)
 		if err != nil {
 			fmt.Printf("got error saving notion token: %s, err: %v", notionToken, err)
