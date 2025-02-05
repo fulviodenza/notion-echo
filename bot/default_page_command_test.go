@@ -7,7 +7,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/SakoDroid/telego/v2/objects"
+	tgbotapi "github.com/OvyFlash/telegram-bot-api"
 	"github.com/google/go-cmp/cmp"
 	"github.com/jomei/notionapi"
 	"github.com/notion-echo/adapters/db"
@@ -21,7 +21,7 @@ func TestDefaultPageCommandExecute(t *testing.T) {
 	selectPageResp := "write the page name in the next message"
 
 	type fields struct {
-		update               *objects.Update
+		update               *tgbotapi.Update
 		envs                 map[string]string
 		bot                  *MockBot
 		pages                map[string]*notionapi.Page

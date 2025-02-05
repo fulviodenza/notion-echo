@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/SakoDroid/telego/v2/objects"
+	tgbotapi "github.com/OvyFlash/telegram-bot-api"
 	"github.com/notion-echo/bot/types"
 	"github.com/notion-echo/metrics"
 	"github.com/prometheus/client_golang/prometheus"
@@ -24,13 +24,13 @@ func NewHelpCommand(bot types.IBot) types.Command {
 	return hc.Execute
 }
 
-func (hc *HelpCommand) Execute(ctx context.Context, update *objects.Update) {
+func (hc *HelpCommand) Execute(ctx context.Context, update *tgbotapi.Update) {
 	if hc == nil || hc.IBot == nil {
 		return
 	}
 	helpMessage := hc.GetHelpMessage()
 
-	id := update.Message.Chat.Id
+	id := int(update.Message.Chat.ID)
 
 	metrics.HelpCount.With(prometheus.Labels{"id": fmt.Sprint(id)}).Inc()
 

@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -22,16 +23,15 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 
-	bt "github.com/SakoDroid/telego/v2"
-	cfg "github.com/SakoDroid/telego/v2/configs"
-	objs "github.com/SakoDroid/telego/v2/objects"
+	tgbotapi "github.com/OvyFlash/telegram-bot-api"
+
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 )
 
 type Bot struct {
 	sync.RWMutex
-	TelegramClient bt.Bot
+	TelegramClient tgbotapi.BotAPI
 	NotionClient   map[string]string
 	UserRepo       db.UserRepoInterface
 	R2Client       r2.R2Interface
@@ -75,18 +75,11 @@ func NewBotWithConfig() (*Bot, error) {
 	bot.SetUserRepo(userRepo)
 	bot.loadHelpMessage()
 
-	botConfig := &cfg.BotConfigs{
-		BotAPI:         cfg.DefaultBotAPI,
-		APIKey:         telegramToken,
-		UpdateConfigs:  cfg.DefaultUpdateConfigs(),
-		Webhook:        false,
-		LogFileAddress: cfg.DefaultLogFile,
-	}
-	b, err := bt.NewBot(botConfig)
+	b, err := tgbotapi.NewBotAPI(telegramToken)
 	if err != nil {
 		return nil, err
 	}
-	bot.SetTelegramClient(*b)
+	bot.SetTelegramClient(b)
 	bot.SetR2Client(r2Client)
 
 	// Schedule daily log upload
@@ -111,55 +104,70 @@ func (b *Bot) scheduleDailyLogUpload(logFileName string, uploadFunc func(logFile
 }
 
 func (b *Bot) Start(ctx context.Context) {
-	updateCh := b.TelegramClient.GetUpdateChannel()
-	go func() {
-		for {
-			update := <-*updateCh
-			if update == nil || update.Message == nil {
-				continue
-			}
-			if strings.Contains(update.Message.Caption, "/note") {
-				NewNoteCommand(b, buildNotionClient)(ctx, update)
-			}
+	updateConfig := tgbotapi.NewUpdate(0)
+	updateConfig.Timeout = 60
 
-			if state := b.GetUserState(update.Message.Chat.Id); state != "" {
-				switch state {
-				case "/note":
-					NewNoteCommand(b, buildNotionClient)(ctx, update)
-					b.state.Delete(update.Message.Chat.Id)
-				case "/defaultpage":
-					NewDefaultPageCommand(b, buildNotionClient)(ctx, update)
-					b.state.Delete(update.Message.Chat.Id)
-				}
-			}
+	updateConfig.AllowedUpdates = []string{
+		tgbotapi.UpdateTypeMessage,
+		tgbotapi.UpdateTypeEditedMessage,
+		tgbotapi.UpdateTypeChannelPost,
+		tgbotapi.UpdateTypeEditedChannelPost,
+		tgbotapi.UpdateTypeBusinessConnection,
+		tgbotapi.UpdateTypeBusinessMessage,
+		tgbotapi.UpdateTypeEditedBusinessMessage,
+		tgbotapi.UpdateTypeDeletedBusinessMessages,
+		tgbotapi.UpdateTypeMessageReaction,
+		tgbotapi.UpdateTypeMessageReactionCount,
+		tgbotapi.UpdateTypeInlineQuery,
+		tgbotapi.UpdateTypeChosenInlineResult,
+		tgbotapi.UpdateTypeCallbackQuery,
+		tgbotapi.UpdateTypeShippingQuery,
+		tgbotapi.UpdateTypePreCheckoutQuery,
+		tgbotapi.UpdateTypePurchasedPaidMedia,
+		tgbotapi.UpdateTypePoll,
+		tgbotapi.UpdateTypePollAnswer,
+		tgbotapi.UpdateTypeMyChatMember,
+		tgbotapi.UpdateTypeChatMember,
+		tgbotapi.UpdateTypeChatJoinRequest,
+		tgbotapi.UpdateTypeChatBoost,
+		tgbotapi.UpdateTypeRemovedChatBoost,
+	}
 
-			b.Logger().WithFields(logrus.Fields{"update_id": update.Update_id}).Info("received update")
+	updatesChannel := b.TelegramClient.GetUpdatesChan(updateConfig)
+	time.Sleep(time.Millisecond * 500)
+	updatesChannel.Clear()
+
+	b.Logger().Info("Bot started and waiting for updates...")
+
+	for update := range updatesChannel {
+		b.Logger().Info("Received an update")
+
+		if update.Message == nil {
+			continue
 		}
-	}()
+		if strings.Contains(update.Message.Caption, "/note") {
+			NewNoteCommand(b, buildNotionClient)(ctx, &update)
+		}
 
-	var handlers = b.initializeHandlers()
-	for c, f := range handlers {
-		c := c
-		f := f
-		b.TelegramClient.AddHandler(c, func(u *objs.Update) {
-			if strings.Contains(c, "/start") {
-				kb := b.TelegramClient.CreateKeyboard(false, true, false, false, "type ...")
-
-				kb.AddButton("/note", 1)
-				kb.AddButton("/register", 1)
-				kb.AddButton("/defaultpage", 2)
-				kb.AddButton("/getdefaultpage", 2)
-				kb.AddButton("/help", 3)
-
-				_, err := b.TelegramClient.AdvancedMode().ASendMessage(u.Message.Chat.Id, "Welcome to notion-echo bot!", "", u.Message.MessageId, 0, false, false, nil, false, false, kb)
-				if err != nil {
-					fmt.Println(err)
-				}
+		if state := b.GetUserState(int(update.Message.Chat.ID)); state != "" {
+			switch state {
+			case "/note":
+				NewNoteCommand(b, buildNotionClient)(ctx, &update)
+				b.state.Delete(int(update.Message.Chat.ID))
+			case "/defaultpage":
+				NewDefaultPageCommand(b, buildNotionClient)(ctx, &update)
+				b.state.Delete(int(update.Message.Chat.ID))
 			}
-			if strings.Contains(u.Message.Text, c) || strings.Contains(u.Message.Caption, c) {
-				f(ctx, u)
+		}
+
+		b.Logger().WithFields(logrus.Fields{"update_id": update.UpdateID}).Info("received update")
+
+		var handlers = b.initializeHandlers()
+		for c, f := range handlers {
+			if strings.Contains(update.Message.Text, c) || strings.Contains(update.Message.Caption, c) {
+				f(ctx, &update)
 			}
-		}, utils.PRIVATE_CHAT_TYPE, utils.GROUP_CHAT_TYPE, utils.SUPERGROUP_CHAT_TYPE)
+		}
 	}
 }
 
@@ -239,22 +247,17 @@ func (b *Bot) SendMessage(msg string, chatId int, formatMarkdown bool, escape bo
 	if escape {
 		msg = utils.EscapeString(msg)
 	}
-	parseMode := ""
-	if formatMarkdown {
-		parseMode = "MarkdownV2"
-	}
-
 	if len(msg) >= utils.MAX_LEN_MESSAGE {
 		msgs := utils.SplitString(msg)
 		for _, m := range msgs {
-			_, err := b.TelegramClient.SendMessage(chatId, m, parseMode, 0, false, false)
+			_, err := b.TelegramClient.Send(tgbotapi.NewMessage(int64(chatId), m))
 			if err != nil {
 				b.Logger().WithFields(logrus.Fields{"error": err}).Error("failed to send message")
 				return err
 			}
 		}
 	} else {
-		_, err := b.TelegramClient.SendMessage(chatId, msg, parseMode, 0, false, false)
+		_, err := b.TelegramClient.Send(tgbotapi.NewMessage(int64(chatId), msg))
 		if err != nil {
 			b.Logger().WithFields(logrus.Fields{"error": err}).Error("failed to send message")
 			return err
@@ -267,10 +270,10 @@ func (b *Bot) loadHelpMessage() {
 	b.helpMessage = utils.HELP_STRING
 }
 
-func (b *Bot) SetTelegramClient(bot bt.Bot) {
-	b.TelegramClient = bot
+func (b *Bot) SetTelegramClient(bot *tgbotapi.BotAPI) {
+	b.TelegramClient = *bot
 }
-func (b *Bot) GetTelegramClient() *bt.Bot {
+func (b *Bot) GetTelegramClient() *tgbotapi.BotAPI {
 	return &b.TelegramClient
 }
 func (b *Bot) SetR2Client(bot r2.R2Interface) {
@@ -295,12 +298,33 @@ func (b *Bot) Logger() *logrus.Logger {
 	return b.logger
 }
 
-func (b *Bot) initializeHandlers() map[string]func(ctx context.Context, up *objs.Update) {
-	return map[string]func(ctx context.Context, up *objs.Update){
+func (b *Bot) initializeHandlers() map[string]func(ctx context.Context, update *tgbotapi.Update) {
+	return map[string]func(ctx context.Context, update *tgbotapi.Update){
+		"/start": func(ctx context.Context, update *tgbotapi.Update) {
+			kb := tgbotapi.NewReplyKeyboard(
+				tgbotapi.NewKeyboardButtonRow(
+					tgbotapi.NewKeyboardButton("/note"),
+					tgbotapi.NewKeyboardButton("/register"),
+				),
+				tgbotapi.NewKeyboardButtonRow(
+					tgbotapi.NewKeyboardButton("/defaultpage"),
+					tgbotapi.NewKeyboardButton("/getdefaultpage"),
+				),
+				tgbotapi.NewKeyboardButtonRow(
+					tgbotapi.NewKeyboardButton("/help"),
+				),
+			)
+
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Welcome to notion-echo bot!")
+			msg.ReplyMarkup = kb
+			_, err := b.TelegramClient.Send(msg)
+			if err != nil {
+				log.Println(err)
+			}
+		},
 		utils.COMMAND_NOTE:             NewNoteCommand(b, buildNotionClient),
 		utils.COMMAND_HELP:             NewHelpCommand(b),
 		utils.COMMAND_REGISTER:         NewRegisterCommand(b, generateStateToken),
-		utils.COMMAND_START:            NewHelpCommand(b),
 		utils.COMMAND_DEFAULT_PAGE:     NewDefaultPageCommand(b, buildNotionClient),
 		utils.COMMAND_GET_DEFAULT_PAGE: NewGetDefaultPageCommand(b),
 		utils.COMMAND_DEAUTHORIZE:      NewDeauthorizeCommand(b),

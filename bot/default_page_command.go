@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/SakoDroid/telego/v2/objects"
+	tgbotapi "github.com/OvyFlash/telegram-bot-api"
 	"github.com/notion-echo/adapters/db"
 	"github.com/notion-echo/adapters/notion"
 	"github.com/notion-echo/bot/types"
@@ -31,12 +31,12 @@ func NewDefaultPageCommand(bot types.IBot, buildNotionClient func(ctx context.Co
 	return hc.Execute
 }
 
-func (dc *DefaultPageCommand) Execute(ctx context.Context, update *objects.Update) {
+func (dc *DefaultPageCommand) Execute(ctx context.Context, update *tgbotapi.Update) {
 	if dc == nil || dc.IBot == nil {
 		return
 	}
 
-	id := update.Message.Chat.Id
+	id := int(update.Message.Chat.ID)
 	dc.Logger().Infof("[DefaultPageCommand] got defaultpage request from %d", id)
 
 	notionToken, err := dc.GetUserRepo().GetNotionTokenByID(ctx, id)
@@ -84,7 +84,7 @@ func (dc *DefaultPageCommand) Execute(ctx context.Context, update *objects.Updat
 		dc.SendMessage(notionerrors.ErrPageNotFound.Error(), id, false, true)
 		return
 	}
-	err = dc.GetUserRepo().SetDefaultPage(ctx, update.Message.Chat.Id, selectedPage)
+	err = dc.GetUserRepo().SetDefaultPage(ctx, id, selectedPage)
 	if err != nil {
 		dc.Logger().WithFields(logrus.Fields{"error": err}).Error("default page error")
 		dc.SendMessage(notionerrors.ErrSetDefaultPage.Error(), id, false, true)

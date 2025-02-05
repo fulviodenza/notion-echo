@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/SakoDroid/telego/v2/objects"
+	tgbotapi "github.com/OvyFlash/telegram-bot-api"
 	"github.com/jomei/notionapi"
 	"github.com/notion-echo/adapters/db"
 	"github.com/notion-echo/adapters/ent"
@@ -40,12 +40,12 @@ func NewNoteCommand(bot types.IBot, buildNotionClient func(ctx context.Context, 
 	return hc.Execute
 }
 
-func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
+func (cc *NoteCommand) Execute(ctx context.Context, update *tgbotapi.Update) {
 	if cc == nil || cc.IBot == nil {
 		return
 	}
 
-	id := update.Message.Chat.Id
+	id := int(update.Message.Chat.ID)
 	cc.Logger().Infof("[NoteCommand] got note from %d", id)
 
 	metrics.NoteCount.With(prometheus.Labels{"id": fmt.Sprint(id)}).Inc()
@@ -95,7 +95,7 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
 	var err error
 	filePath := ""
 	children := []notionapi.Block{}
-	if update.Message.Document != nil && update.Message.Document.FileId != "" {
+	if update.Message.Document != nil && update.Message.Document.FileID != "" {
 		filePath, err = downloadAndUploadDocument(cc.IBot, update.Message.Document)
 	}
 	if update.Message.Photo != nil {
@@ -162,27 +162,31 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *objects.Update) {
 	cc.SendMessage(fmt.Sprintf("%s on %s page", NOTE_SAVED, notion.ExtractName(page.Properties)), id, false, false)
 }
 
-func downloadAndUploadDocument(bot types.IBot, ps *objects.Document) (string, error) {
-	out, err := os.Create(ps.FileId)
+func downloadAndUploadDocument(bot types.IBot, ps *tgbotapi.Document) (string, error) {
+	_, err := os.Create(ps.FileID)
 	if err != nil {
 		return "", err
 	}
 
 	// This get file is performed to be able to get
 	// the filename to retrieve
-	file, err := bot.GetTelegramClient().GetFile(ps.FileId, true, out)
+	file, err := bot.GetTelegramClient().GetFile(tgbotapi.FileConfig{
+		FileID: ps.FileID,
+	})
 	if err != nil {
 		return "", err
 	}
-	return file.FilePath, os.Remove(ps.FileId)
+	return file.FilePath, os.Remove(ps.FileID)
 }
 
-func downloadAndUploadImage(bot types.IBot, ps objects.PhotoSize) (string, error) {
-	out, err := os.Create(ps.FileId)
+func downloadAndUploadImage(bot types.IBot, ps tgbotapi.PhotoSize) (string, error) {
+	_, err := os.Create(ps.FileID)
 	if err != nil {
 		return "", err
 	}
-	file, err := bot.GetTelegramClient().GetFile(ps.FileId, true, out)
+	file, err := bot.GetTelegramClient().GetFile(tgbotapi.FileConfig{
+		FileID: ps.FileID,
+	})
 	if err != nil {
 		return "", err
 	}

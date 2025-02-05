@@ -7,7 +7,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/SakoDroid/telego/v2/objects"
+	tgbotapi "github.com/OvyFlash/telegram-bot-api"
 	"github.com/google/go-cmp/cmp"
 	"github.com/jomei/notionapi"
 	"github.com/notion-echo/adapters/db"
@@ -18,7 +18,7 @@ import (
 
 func TestNoteCommandExecute(t *testing.T) {
 	type fields struct {
-		update               *objects.Update
+		update               *tgbotapi.Update
 		envs                 map[string]string
 		bot                  *MockBot
 		pages                map[string]*notionapi.Page

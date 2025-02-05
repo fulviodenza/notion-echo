@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"os"
 
-	"github.com/SakoDroid/telego/v2/objects"
+	tgbotapi "github.com/OvyFlash/telegram-bot-api"
 	"github.com/notion-echo/bot/types"
 	"github.com/notion-echo/errors"
 	"github.com/notion-echo/metrics"
@@ -29,8 +29,8 @@ func NewRegisterCommand(bot types.IBot, generateStateToken func() (string, error
 	return hc.Execute
 }
 
-func (rc *RegisterCommand) Execute(ctx context.Context, update *objects.Update) {
-	id := update.Message.Chat.Id
+func (rc *RegisterCommand) Execute(ctx context.Context, update *tgbotapi.Update) {
+	id := int(update.Message.Chat.ID)
 	rc.Logger().Infof("[RegisterCommand] got registration request from %d", id)
 
 	metrics.RegisterCount.With(prometheus.Labels{"id": fmt.Sprint(id)}).Inc()
@@ -41,7 +41,7 @@ func (rc *RegisterCommand) Execute(ctx context.Context, update *objects.Update) 
 		rc.SendMessage(errors.ErrStateToken.Error(), id, false, true)
 		return
 	}
-	_, err = rc.GetUserRepo().SaveUser(ctx, update.Message.Chat.Id, stateToken)
+	_, err = rc.GetUserRepo().SaveUser(ctx, id, stateToken)
 	if err != nil {
 		rc.Logger().WithFields(logrus.Fields{"error": err}).Error("register error")
 		rc.SendMessage(errors.ErrRegistering.Error(), id, false, true)
