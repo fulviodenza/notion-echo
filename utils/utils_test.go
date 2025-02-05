@@ -63,21 +63,8 @@ func TestGetExt(t *testing.T) {
 	}
 }
 
-func TestEscapeString(t *testing.T) {
-	testcases := map[string]string{
-		"a.b": "a\\.b",
-	}
-	for testcase, want := range testcases {
-		got := EscapeString(testcase)
-		if strings.Compare(got, want) != 0 {
-			t.Errorf("testcase: %s\nwant: %s, got: %s", testcase, want, got)
-		}
-	}
-}
-
 func TestAll(t *testing.T) {
 	t.Run("SplitString", TestSplitString)
 	t.Run("EncryptDecrypt", TestEncryptDecrypt)
 	t.Run("GetExt", TestGetExt)
-	t.Run("EscapeString", TestEscapeString)
 }

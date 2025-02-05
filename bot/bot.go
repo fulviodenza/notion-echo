@@ -249,9 +249,6 @@ func (b *Bot) GetNotionClient(userId string) string {
 }
 
 func (b *Bot) SendMessage(msg string, chatId int, formatMarkdown bool, escape bool) error {
-	if escape {
-		msg = utils.EscapeString(msg)
-	}
 	if len(msg) >= utils.MAX_LEN_MESSAGE {
 		msgs := utils.SplitString(msg)
 		for _, m := range msgs {

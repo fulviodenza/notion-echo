@@ -77,16 +77,6 @@ func GetExt(path string) string {
 	return comps[len(comps)-1]
 }
 
-func EscapeString(input string) string {
-	specialChars := []string{"_", "*", "[", "]", "(", ")", "~", "`", ">", "#", "+", "-", "=", "|", "{", "}", ".", "!"}
-
-	for _, char := range specialChars {
-		input = strings.ReplaceAll(input, char, "\\"+char)
-	}
-
-	return input
-}
-
 func SplitFirstOccurrence(s string, sep string) (string, string) {
 	var part1, part2 string
 	if i := strings.Index(s, sep); i >= 0 {
