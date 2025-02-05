@@ -3,8 +3,7 @@ package bot
 import (
 	"context"
 
-	bt "github.com/SakoDroid/telego/v2"
-	"github.com/SakoDroid/telego/v2/objects"
+	tgbotapi "github.com/OvyFlash/telegram-bot-api"
 	"github.com/notion-echo/adapters/db"
 	"github.com/notion-echo/adapters/ent"
 	"github.com/notion-echo/adapters/r2"
@@ -40,11 +39,11 @@ func (b *MockBot) GetHelpMessage() string {
 	return "help message"
 }
 
-func (b *MockBot) SetTelegramClient(bot bt.Bot) {}
+func (b *MockBot) SetTelegramClient(bot *tgbotapi.BotAPI) {}
 
 func (b *MockBot) SetR2Client(bot r2.R2Interface) {}
 
-func (b *MockBot) GetTelegramClient() *bt.Bot {
+func (b *MockBot) GetTelegramClient() *tgbotapi.BotAPI {
 	return nil
 }
 
@@ -56,11 +55,11 @@ func (b *MockBot) GetUserRepo() db.UserRepoInterface {
 }
 
 var (
-	update = func(opts ...func(*objects.Update)) *objects.Update {
-		update := &objects.Update{
-			Message: &objects.Message{
-				Chat: &objects.Chat{
-					Id: 1,
+	update = func(opts ...func(*tgbotapi.Update)) *tgbotapi.Update {
+		update := &tgbotapi.Update{
+			Message: &tgbotapi.Message{
+				Chat: tgbotapi.Chat{
+					ID: 1,
 				},
 			},
 		}
@@ -70,14 +69,14 @@ var (
 
 		return update
 	}
-	withMessage = func(msg string) func(*objects.Update) {
-		return func(up *objects.Update) {
+	withMessage = func(msg string) func(*tgbotapi.Update) {
+		return func(up *tgbotapi.Update) {
 			up.Message.Text = msg
 		}
 	}
-	withId = func(id int) func(*objects.Update) {
-		return func(up *objects.Update) {
-			up.Message.Chat.Id = id
+	withId = func(id int) func(*tgbotapi.Update) {
+		return func(up *tgbotapi.Update) {
+			up.Message.Chat.ID = int64(id)
 		}
 	}
 )

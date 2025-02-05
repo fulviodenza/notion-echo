@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/SakoDroid/telego/v2/objects"
+	tgbotapi "github.com/OvyFlash/telegram-bot-api"
 	"github.com/notion-echo/bot/types"
 	"github.com/notion-echo/errors"
 	"github.com/sirupsen/logrus"
@@ -25,11 +25,11 @@ func NewSendAllCommand(bot types.IBot) types.Command {
 	return hc.Execute
 }
 
-func (sa *SendAllCommand) Execute(ctx context.Context, update *objects.Update) {
+func (sa *SendAllCommand) Execute(ctx context.Context, update *tgbotapi.Update) {
 	if sa == nil || sa.IBot == nil {
 		return
 	}
-	id := update.Message.Chat.Id
+	id := int(update.Message.Chat.ID)
 
 	tg_id, err := strconv.Atoi(os.Getenv("TG_ID"))
 	if err != nil {

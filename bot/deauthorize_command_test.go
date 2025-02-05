@@ -5,14 +5,14 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/SakoDroid/telego/v2/objects"
+	tgbotapi "github.com/OvyFlash/telegram-bot-api"
 	"github.com/google/go-cmp/cmp"
 	notionerrors "github.com/notion-echo/errors"
 )
 
 func TestDeauthorizeCommandExecute(t *testing.T) {
 	type fields struct {
-		update *objects.Update
+		update *tgbotapi.Update
 		bot    *MockBot
 	}
 	tests := []struct {
@@ -54,7 +54,7 @@ func TestDeauthorizeCommandExecute(t *testing.T) {
 				t.Errorf("error %s: (- got, + want) %s\n", tt.name, diff)
 			}
 
-			u, err := tt.fields.bot.usersDb.GetUser(context.TODO(), tt.fields.update.Message.Chat.Id)
+			u, err := tt.fields.bot.usersDb.GetUser(context.TODO(), int(tt.fields.update.Message.Chat.ID))
 			if err != nil {
 				t.Errorf("test: %v\nexpected user to not be present", tt.name)
 			}

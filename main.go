@@ -19,11 +19,6 @@ func main() {
 		log.Fatalf("got error: %v", err)
 	}
 
-	err = botWithConfig.TelegramClient.Run(false)
-	if err != nil {
-		log.Fatalf("got error: %v", err)
-	}
-
 	go botWithConfig.RunOauth2Endpoint()
 	go botWithConfig.Start(ctx)
 
