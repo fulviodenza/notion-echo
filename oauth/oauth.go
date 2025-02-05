@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -55,7 +54,7 @@ func Handler(c echo.Context) (string, error) {
 	}
 	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, "https://api.notion.com/v1/oauth/token", bytes.NewReader(b))
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("got error in creating request: %v", err)
 		return "", err
 	}
 
@@ -64,7 +63,7 @@ func Handler(c echo.Context) (string, error) {
 
 	rsp, err := client.Do(req)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("got error in doing request: %v", err)
 		return "", err
 	}
 
@@ -72,7 +71,7 @@ func Handler(c echo.Context) (string, error) {
 
 	var body OAuthAccessToken
 	if err = json.NewDecoder(rsp.Body).Decode(&body); err != nil {
-		fmt.Println(err)
+		log.Fatalf("got error in decoding request: %v", err)
 		return "", err
 	}
 
