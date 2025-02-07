@@ -7,7 +7,6 @@ var (
 	ErrSearchPage         = errors.New("writing page not found")
 	ErrNotEnoughArguments = errors.New("not enough arguments")
 	ErrNotRegistered      = errors.New("it looks like you are not registered, try running `/register` command first")
-	ErrTokenNotFound      = errors.New("internal error")
 	ErrSetDefaultPage     = errors.New("error setting default page")
 	ErrPageNotFound       = errors.New("page not found, please run /defaultpage command first")
 	ErrRegistering        = errors.New("error registering")

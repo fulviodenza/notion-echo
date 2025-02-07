@@ -42,7 +42,7 @@ func (dc *DefaultPageCommand) Execute(ctx context.Context, update *tgbotapi.Upda
 	notionToken, err := dc.GetUserRepo().GetNotionTokenByID(ctx, id)
 	if err != nil {
 		dc.Logger().WithFields(logrus.Fields{"error": err}).Error("note error")
-		dc.SendMessage(notionerrors.ErrTokenNotFound.Error(), id, false, true)
+		dc.SendMessage(notionerrors.ErrNotRegistered.Error(), id, false, true)
 		return
 	}
 	notionClient, err := dc.buildNotionClient(ctx, dc.GetUserRepo(), id, notionToken)
