@@ -31,6 +31,7 @@ type ICommand interface {
 type IBot interface {
 	Start(ctx context.Context)
 	SendMessage(msg string, chatId int, formatMarkdown bool, escape bool) error
+	SendButton(chatId int64, buttonText, url, msgTxt string) error
 	GetHelpMessage() string
 	SetTelegramClient(bot *tgbotapi.BotAPI)
 	SetR2Client(r2 r2.R2Interface)

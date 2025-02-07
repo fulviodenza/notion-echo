@@ -54,6 +54,10 @@ func (b *MockBot) GetUserRepo() db.UserRepoInterface {
 	return b.usersDb
 }
 
+func (b *MockBot) SendButton(chatId int64, buttonText, url, msgTxt string) error {
+	return nil
+}
+
 var (
 	update = func(opts ...func(*tgbotapi.Update)) *tgbotapi.Update {
 		update := &tgbotapi.Update{

@@ -248,6 +248,22 @@ func (b *Bot) GetNotionClient(userId string) string {
 	return b.NotionClient[userId]
 }
 
+func (b *Bot) SendButton(chatId int64, buttonText, url, msgTxt string) error {
+	inlineKeyboardButton := tgbotapi.NewInlineKeyboardButtonURL(buttonText, url)
+	inlineKeyboardMarkup := tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(inlineKeyboardButton),
+	)
+
+	msg := tgbotapi.NewMessage(chatId, msgTxt)
+	msg.ReplyMarkup = inlineKeyboardMarkup
+
+	_, err := b.TelegramClient.Send(msg)
+	if err != nil {
+		b.Logger().WithFields(logrus.Fields{"error": err}).Error("failed to send message with button")
+		return err
+	}
+	return nil
+}
 func (b *Bot) SendMessage(msg string, chatId int, formatMarkdown bool, escape bool) error {
 	if len(msg) >= utils.MAX_LEN_MESSAGE {
 		msgs := utils.SplitString(msg)
