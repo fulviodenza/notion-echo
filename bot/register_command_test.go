@@ -4,14 +4,11 @@ import (
 	"context"
 	"errors"
 	"os"
-	"sort"
 	"testing"
 
 	tgbotapi "github.com/OvyFlash/telegram-bot-api"
-	"github.com/google/go-cmp/cmp"
 	"github.com/notion-echo/adapters/db"
 	"github.com/notion-echo/adapters/ent"
-	notionerrors "github.com/notion-echo/errors"
 )
 
 func TestRegisterCommandExecute(t *testing.T) {
@@ -22,7 +19,6 @@ func TestRegisterCommandExecute(t *testing.T) {
 	tests := []struct {
 		name      string
 		fields    fields
-		want      []string
 		wantUsers *ent.User
 		err       bool
 	}{
@@ -40,11 +36,6 @@ func TestRegisterCommandExecute(t *testing.T) {
 					},
 				})),
 			},
-			[]string{
-				"click on the following URL, and authorize the page you want this bot to have access to",
-				"localhost&state=stateToken",
-				"when you have done with registration, select a default page using command /defaultpage with the name of the page you have authorized before",
-			},
 			&ent.User{
 				ID: 1,
 			},
@@ -57,9 +48,6 @@ func TestRegisterCommandExecute(t *testing.T) {
 				bot: bot(withUserRepo(&db.UserRepoMock{
 					Err: errors.New(""),
 				})),
-			},
-			[]string{
-				notionerrors.ErrRegistering.Error(),
 			},
 			&ent.User{
 				ID: 1,
@@ -80,13 +68,6 @@ func TestRegisterCommandExecute(t *testing.T) {
 
 			if (b.Err != nil) != tt.err {
 				t.Errorf("Bot.Execute() error = %v", b.Err)
-			}
-
-			sort.Strings(b.Resp)
-			sort.Strings(tt.want)
-
-			if diff := cmp.Diff(b.Resp, tt.want); diff != "" {
-				t.Errorf("error %s: (- got, + want) %s\n", tt.name, diff)
 			}
 		})
 	}

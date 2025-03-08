@@ -2,17 +2,12 @@ package bot
 
 import (
 	"context"
-	"fmt"
-	"strings"
 
 	tgbotapi "github.com/OvyFlash/telegram-bot-api"
 	"github.com/notion-echo/adapters/db"
 	"github.com/notion-echo/adapters/notion"
 	"github.com/notion-echo/bot/types"
 	notionerrors "github.com/notion-echo/errors"
-	"github.com/notion-echo/metrics"
-	"github.com/notion-echo/utils"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 )
 
@@ -41,55 +36,34 @@ func (dc *DefaultPageCommand) Execute(ctx context.Context, update *tgbotapi.Upda
 
 	notionToken, err := dc.GetUserRepo().GetNotionTokenByID(ctx, id)
 	if err != nil {
-		dc.Logger().WithFields(logrus.Fields{"error": err}).Error("note error")
+		dc.Logger().WithFields(logrus.Fields{"error": err}).Errorf("default page error: %v", err)
 		dc.SendMessage(notionerrors.ErrNotRegistered.Error(), id, false, true)
 		return
 	}
 	notionClient, err := dc.buildNotionClient(ctx, dc.GetUserRepo(), id, notionToken)
 	if err != nil {
-		dc.Logger().WithFields(logrus.Fields{"error": err}).Error("default page error")
+		dc.Logger().WithFields(logrus.Fields{"error": err}).Errorf("default page error: %v", err)
 		dc.SendMessage(notionerrors.ErrSetDefaultPage.Error(), id, false, true)
 		return
 	}
 
-	selectedPage := ""
-	if dc.GetUserState(id) == "" {
-		_, selectedPage = utils.SplitFirstOccurrence(update.Message.Text, " ")
-		selectedPage = strings.TrimSpace(selectedPage)
-	}
-	if selectedPage == "" && dc.GetUserState(id) == "" {
-		dc.SetUserState(id, "/defaultpage")
-		dc.SendMessage("write the page name in the next message", id, false, true)
-		return
-	}
-
-	if dc.GetUserState(id) != "" {
-		selectedPage = strings.TrimSpace(update.Message.Text)
-		dc.DeleteUserState(id)
-	}
-
-	pages, err := notionClient.SearchPage(ctx, selectedPage)
+	pages, err := notionClient.ListPages(ctx)
 	if err != nil {
-		dc.Logger().WithFields(logrus.Fields{"error": err}).Error("default page error")
+		dc.Logger().WithFields(logrus.Fields{"error": err}).Errorf("default page error: %v", err)
 		return
 	}
-
 	if len(pages) == 0 {
-		dc.Logger().WithFields(logrus.Fields{"error": err}).Error("note error")
+		dc.Logger().WithFields(logrus.Fields{"error": err}).Errorf("default page error: %v", err)
 		dc.SendMessage(notionerrors.ErrBotNotAuthorized.Error(), id, false, true)
 		return
 	}
-	p := pages[0]
-	if p.ID == "" || p.Object == "" {
-		dc.SendMessage(notionerrors.ErrPageNotFound.Error(), id, false, true)
-		return
-	}
-	err = dc.GetUserRepo().SetDefaultPage(ctx, id, selectedPage)
+
+	err = dc.SendButtonWithData(
+		int64(id),
+		"Select the page you want to set as default",
+		pages,
+	)
 	if err != nil {
-		dc.Logger().WithFields(logrus.Fields{"error": err}).Error("default page error")
-		dc.SendMessage(notionerrors.ErrSetDefaultPage.Error(), id, false, true)
-		return
+		dc.Logger().WithFields(logrus.Fields{"error": err}).Errorf("default page error: %v", err)
 	}
-	metrics.DefaultPageCount.With(prometheus.Labels{"id": fmt.Sprint(id), "page": string(p.ID)}).Inc()
-	dc.SendMessage(fmt.Sprintf("page %s set as default", selectedPage), id, false, true)
 }

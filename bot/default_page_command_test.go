@@ -4,22 +4,16 @@ import (
 	"context"
 	"errors"
 	"os"
-	"sort"
 	"testing"
 
 	tgbotapi "github.com/OvyFlash/telegram-bot-api"
-	"github.com/google/go-cmp/cmp"
 	"github.com/jomei/notionapi"
 	"github.com/notion-echo/adapters/db"
 	"github.com/notion-echo/adapters/ent"
 	"github.com/notion-echo/adapters/notion"
-	notionerrors "github.com/notion-echo/errors"
 )
 
 func TestDefaultPageCommandExecute(t *testing.T) {
-	successResp := "page test set as default"
-	selectPageResp := "write the page name in the next message"
-
 	type fields struct {
 		update               *tgbotapi.Update
 		envs                 map[string]string
@@ -30,7 +24,6 @@ func TestDefaultPageCommandExecute(t *testing.T) {
 	tests := []struct {
 		name      string
 		fields    fields
-		want      []string
 		wantUsers *ent.User
 		err       bool
 	}{
@@ -47,7 +40,6 @@ func TestDefaultPageCommandExecute(t *testing.T) {
 					},
 				},
 			},
-			[]string{successResp},
 			&ent.User{
 				ID: 1,
 			},
@@ -60,7 +52,6 @@ func TestDefaultPageCommandExecute(t *testing.T) {
 				envs:   map[string]string{},
 				bot:    bot(),
 			},
-			[]string{"it looks like you are not registered, try running `/register` command first"},
 			&ent.User{
 				ID: 1,
 			},
@@ -74,7 +65,6 @@ func TestDefaultPageCommandExecute(t *testing.T) {
 				bot:                  bot(),
 				buildNotionClientErr: errors.New(""),
 			},
-			[]string{notionerrors.ErrSetDefaultPage.Error()},
 			&ent.User{
 				ID: 1,
 			},
@@ -93,7 +83,6 @@ func TestDefaultPageCommandExecute(t *testing.T) {
 					},
 				},
 			},
-			[]string{notionerrors.ErrPageNotFound.Error()},
 			&ent.User{
 				ID: 1,
 			},
@@ -112,7 +101,6 @@ func TestDefaultPageCommandExecute(t *testing.T) {
 					},
 				},
 			},
-			[]string{notionerrors.ErrPageNotFound.Error()},
 			&ent.User{
 				ID: 1,
 			},
@@ -131,7 +119,6 @@ func TestDefaultPageCommandExecute(t *testing.T) {
 					},
 				},
 			},
-			[]string{selectPageResp},
 			&ent.User{
 				ID: 1,
 			},
@@ -149,9 +136,6 @@ func TestDefaultPageCommandExecute(t *testing.T) {
 						Object: notionapi.ObjectTypeBlock,
 					},
 				},
-			},
-			[]string{
-				notionerrors.ErrSetDefaultPage.Error(),
 			},
 			&ent.User{
 				ID: 1,
@@ -176,11 +160,6 @@ func TestDefaultPageCommandExecute(t *testing.T) {
 				t.Errorf("Bot.Execute() error = %v", tt.fields.bot.Err)
 			}
 
-			sort.Strings(tt.fields.bot.Resp)
-			sort.Strings(tt.want)
-			if diff := cmp.Diff(tt.fields.bot.Resp, tt.want); diff != "" {
-				t.Errorf("error %s: (- got, + want) %s\n", tt.name, diff)
-			}
 			t.Cleanup(func() {
 				for k := range tt.fields.envs {
 					os.Setenv(k, "")

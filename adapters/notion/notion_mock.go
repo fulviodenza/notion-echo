@@ -13,6 +13,15 @@ type NotionMock struct {
 	err   error
 }
 
+func (v *NotionMock) ListPages(ctx context.Context) ([]*notionapi.Page, error) {
+	return []*notionapi.Page{
+		{
+			ID:         "",
+			Properties: notionapi.Properties{},
+		},
+	}, nil
+}
+
 func NewNotionMock(pages map[string]*notionapi.Page, err error) NotionInterface {
 	return &NotionMock{
 		pages: pages,

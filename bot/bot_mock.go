@@ -4,6 +4,7 @@ import (
 	"context"
 
 	tgbotapi "github.com/OvyFlash/telegram-bot-api"
+	"github.com/jomei/notionapi"
 	"github.com/notion-echo/adapters/db"
 	"github.com/notion-echo/adapters/ent"
 	"github.com/notion-echo/adapters/r2"
@@ -17,6 +18,10 @@ type MockBot struct {
 	Resp    []string
 	Err     error
 	usersDb db.UserRepoInterface
+}
+
+func (b *MockBot) SendButtonWithData(chatId int64, buttonText string, pages []*notionapi.Page) error {
+	return nil
 }
 
 func NewMockBot(usersDb db.UserRepoInterface) *MockBot {
@@ -54,7 +59,7 @@ func (b *MockBot) GetUserRepo() db.UserRepoInterface {
 	return b.usersDb
 }
 
-func (b *MockBot) SendButton(chatId int64, buttonText, url, msgTxt string) error {
+func (b *MockBot) SendButtonWithURL(chatId int64, buttonText, url, msgTxt string) error {
 	return nil
 }
 

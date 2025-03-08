@@ -141,6 +141,35 @@ func (b *Bot) Start(ctx context.Context) {
 
 	for update := range updatesChannel {
 		b.Logger().Info("Received an update")
+		if update.CallbackQuery != nil {
+			if strings.HasPrefix(update.CallbackQuery.Data, "setpage:") {
+				parts := strings.Split(update.CallbackQuery.Data, ":")
+				if len(parts) != 2 {
+					b.Logger().Error("invalid callback data format")
+					continue
+				}
+
+				pageName := parts[1]
+				chatID := update.CallbackQuery.Message.Chat.ID
+
+				err := b.GetUserRepo().SetDefaultPage(ctx, int(chatID), pageName)
+				if err != nil {
+					b.Logger().WithFields(logrus.Fields{
+						"error":     err,
+						"chat_id":   chatID,
+						"page_name": pageName,
+					}).Error("failed to set default page")
+
+					b.SendMessage("Failed to set default page", int(chatID), false, true)
+					continue
+				}
+
+				b.SendMessage(fmt.Sprintf("Default page set to: %s", pageName), int(chatID), false, true)
+
+				callback := tgbotapi.NewCallback(update.CallbackQuery.ID, "Default page updated")
+				b.TelegramClient.Send(callback)
+			}
+		}
 
 		if update.Message == nil {
 			continue
@@ -248,7 +277,7 @@ func (b *Bot) GetNotionClient(userId string) string {
 	return b.NotionClient[userId]
 }
 
-func (b *Bot) SendButton(chatId int64, buttonText, url, msgTxt string) error {
+func (b *Bot) SendButtonWithURL(chatId int64, buttonText, url, msgTxt string) error {
 	inlineKeyboardButton := tgbotapi.NewInlineKeyboardButtonURL(buttonText, url)
 	inlineKeyboardMarkup := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(inlineKeyboardButton),
@@ -264,6 +293,41 @@ func (b *Bot) SendButton(chatId int64, buttonText, url, msgTxt string) error {
 	}
 	return nil
 }
+
+func (b *Bot) SendButtonWithData(chatId int64, buttonText string, pages []*notionapi.Page) error {
+	var rows [][]tgbotapi.InlineKeyboardButton
+	for _, page := range pages {
+		title := notion.ExtractName(page.Properties)
+		if title == "" {
+			continue
+		}
+		// Use shorter callback data format: "sp:{pageID}"
+		callbackData := fmt.Sprintf("setpage:%s", title)
+		if len(callbackData) > 64 {
+			b.Logger().WithFields(logrus.Fields{
+				"page_id": page.ID,
+				"title":   title,
+			}).Warn("callback data too long, skipping page")
+			continue
+		}
+
+		button := tgbotapi.NewInlineKeyboardButtonData(title, callbackData)
+		row := []tgbotapi.InlineKeyboardButton{button}
+		rows = append(rows, row)
+	}
+
+	if len(rows) == 0 {
+		return fmt.Errorf("no valid pages to display")
+	}
+
+	inlineKeyboardMarkup := tgbotapi.NewInlineKeyboardMarkup(rows...)
+	msg := tgbotapi.NewMessage(chatId, buttonText)
+	msg.ReplyMarkup = inlineKeyboardMarkup
+
+	_, err := b.TelegramClient.Send(msg)
+	return err
+}
+
 func (b *Bot) SendMessage(msg string, chatId int, formatMarkdown bool, escape bool) error {
 	if len(msg) >= utils.MAX_LEN_MESSAGE {
 		msgs := utils.SplitString(msg)

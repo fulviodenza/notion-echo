@@ -9,6 +9,7 @@ import (
 type NotionInterface interface {
 	SearchPage(ctx context.Context, pageName string) ([]*notionapi.Page, error)
 	Block() notionapi.BlockService
+	ListPages(ctx context.Context) ([]*notionapi.Page, error)
 }
 
 var _ NotionInterface = (*Service)(nil)
@@ -21,6 +22,29 @@ func NewNotionService(client *notionapi.Client) NotionInterface {
 	return &Service{
 		Client: client,
 	}
+}
+
+func (ns *Service) ListPages(ctx context.Context) ([]*notionapi.Page, error) {
+	res, err := ns.Search.Do(ctx, &notionapi.SearchRequest{
+		Filter: notionapi.SearchFilter{
+			Value:    "page",
+			Property: "object",
+		},
+		Sort: &notionapi.SortObject{
+			Direction: "descending",
+			Timestamp: "last_edited_time",
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	pages := []*notionapi.Page{}
+	for _, obj := range res.Results {
+		pages = append(pages, obj.(*notionapi.Page))
+	}
+
+	return pages, nil
 }
 
 func (ns *Service) SearchPage(ctx context.Context, pageName string) ([]*notionapi.Page, error) {
