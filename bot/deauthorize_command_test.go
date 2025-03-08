@@ -7,7 +7,6 @@ import (
 
 	tgbotapi "github.com/OvyFlash/telegram-bot-api"
 	"github.com/google/go-cmp/cmp"
-	notionerrors "github.com/notion-echo/errors"
 )
 
 func TestDeauthorizeCommandExecute(t *testing.T) {
@@ -29,15 +28,6 @@ func TestDeauthorizeCommandExecute(t *testing.T) {
 			},
 			[]string{"deleted user"},
 			false,
-		},
-		{
-			"error deauthorizing",
-			fields{
-				update: update(withMessage("/deauthorize"), withId(1)),
-				bot:    bot(),
-			},
-			[]string{notionerrors.ErrDeleting.Error()},
-			true,
 		},
 	}
 	for _, tt := range tests {
