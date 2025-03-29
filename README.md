@@ -48,7 +48,7 @@ For more information and updates, follow us on [GitHub](https://github.com/fulvi
 
 We welcome contributions of all kinds from the community. 
 
-If you're interested in helping improve notion-echo Bot submit an issue or if you want to discuss features/bugs/other join the telegram group: https://t.me/+BOWbMpNPh6IzNTY0
+If you're interested in helping improve notion-echo Bot submit an issue or if you want to discuss features/bugs/other join the [telegram group](https://t.me/+BOWbMpNPh6IzNTY0)
 
 ## Next features
 - Storage not depending on telegram but relying on ourself, so that the issue for docs visualization in notion is not broken
