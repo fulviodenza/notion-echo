@@ -174,28 +174,40 @@ func (b *Bot) Start(ctx context.Context) {
 		if update.Message == nil {
 			continue
 		}
-		if strings.Contains(update.Message.Caption, "/note") {
-			NewNoteCommand(b, buildNotionClient)(ctx, &update)
-		}
-
 		if state := b.GetUserState(int(update.Message.Chat.ID)); state != "" {
 			switch state {
 			case "/note":
 				NewNoteCommand(b, buildNotionClient)(ctx, &update)
 				b.state.Delete(int(update.Message.Chat.ID))
+				continue
 			case "/defaultpage":
 				NewDefaultPageCommand(b, buildNotionClient)(ctx, &update)
 				b.state.Delete(int(update.Message.Chat.ID))
+				continue
 			}
 		}
 
-		b.Logger().WithFields(logrus.Fields{"update_id": update.UpdateID}).Info("received update")
+		if update.Message.Caption != "" && strings.Contains(update.Message.Caption, "/note") {
+			NewNoteCommand(b, buildNotionClient)(ctx, &update)
+			continue
+		}
 
+		var foundCommand bool
 		var handlers = b.initializeHandlers()
 		for c, f := range handlers {
-			if strings.Contains(update.Message.Text, c) || strings.Contains(update.Message.Caption, c) {
+			if (update.Message.Text != "" && strings.HasPrefix(update.Message.Text, c)) ||
+				(update.Message.Caption != "" && strings.HasPrefix(update.Message.Caption, c)) {
 				f(ctx, &update)
+				foundCommand = true
+				break
 			}
+		}
+
+		// If no command was found and there's text, treat it as a note
+		if !foundCommand && update.Message.Text != "" {
+			noteUpdate := update
+			noteUpdate.Message.Text = "/note " + update.Message.Text
+			NewNoteCommand(b, buildNotionClient)(ctx, &noteUpdate)
 		}
 	}
 }
