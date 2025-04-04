@@ -53,8 +53,6 @@ If you're interested in helping improve notion-echo Bot submit an issue or if yo
 ## Next features
 - Storage not depending on telegram but relying on ourself, so that the issue for docs visualization in notion is not broken
 - Monitoring (Prometheus)
-- Switch default pages
-- Create a default page if unset into the Database
 - Save new notes formats
   
 ## Known issues
