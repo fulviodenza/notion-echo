@@ -1,12 +1,13 @@
 module github.com/notion-echo
 
-go 1.23
+go 1.24
 
 require (
 	github.com/OvyFlash/telegram-bot-api v0.0.0-20241219171906-3f2ca0c14ada
 	github.com/aws/aws-sdk-go-v2 v1.25.3
 	github.com/aws/aws-sdk-go-v2/config v1.27.7
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.51.4
+	github.com/fulviodenza/go-gladia-client v0.2.0
 	github.com/google/go-cmp v0.6.0
 	github.com/jackc/pgx/v5 v5.5.5
 	github.com/jomei/notionapi v1.13.0

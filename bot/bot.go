@@ -14,6 +14,7 @@ import (
 
 	"github.com/jomei/notionapi"
 	"github.com/notion-echo/adapters/db"
+	"github.com/notion-echo/adapters/gladia"
 	"github.com/notion-echo/adapters/notion"
 	"github.com/notion-echo/adapters/r2"
 	"github.com/notion-echo/bot/types"
@@ -41,7 +42,7 @@ type Bot struct {
 }
 
 // this cast force us to follow the given interface
-// if the interface will not be followed, this will not compile
+// if the interface will not be implemented, this will not compile
 var _ types.IBot = (*Bot)(nil)
 
 var (
@@ -189,6 +190,23 @@ func (b *Bot) Start(ctx context.Context) {
 
 		if update.Message.Caption != "" && strings.Contains(update.Message.Caption, "/note") {
 			NewNoteCommand(b, buildNotionClient)(ctx, &update)
+			continue
+		}
+
+		if update.Message.Voice != nil {
+			message, err := gladia.HandleTranscribe(ctx, b.TelegramClient, update.Message.Voice)
+			if err != nil {
+				b.Logger().WithFields(logrus.Fields{
+					"error": err,
+				}).Error("Failed to transcribe voice message")
+				b.SendMessage("Sorry, I couldn't transcribe your voice message.", int(update.Message.Chat.ID), false, true)
+			} else {
+				b.SendMessage(fmt.Sprintf("Transcribed: %s", message), int(update.Message.Chat.ID), false, true)
+
+				noteUpdate := update
+				noteUpdate.Message.Text = "/note " + message
+				NewNoteCommand(b, buildNotionClient)(ctx, &noteUpdate)
+			}
 			continue
 		}
 

@@ -11,16 +11,6 @@ import (
 	tgbotapi "github.com/OvyFlash/telegram-bot-api"
 )
 
-type NotionDbRow struct {
-	Tags notionapi.MultiSelectProperty `json:"Tags"`
-	Text notionapi.RichTextProperty    `json:"Text"`
-	Name notionapi.TitleProperty       `json:"Name"`
-}
-
-type TelegramInterface interface {
-	SendMessage(chatID int, msg string, parseMode string, replyToMessageID int, disableWebPagePreview, disableNotification bool) (*tgbotapi.Message, error)
-}
-
 type Command func(ctx context.Context, update *tgbotapi.Update)
 
 type ICommand interface {
