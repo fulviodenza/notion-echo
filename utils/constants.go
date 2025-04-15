@@ -30,7 +30,8 @@ Here is how to get started:
 - /defaultpage - Sets the default Notion page for your notes. Ensure this is an authorized page during registration;
 - /getdefaultpage - Get default page you selected with /defaultpage page_name;
 - /deauthorize - I will forget you;
-	
+
+If you send a voice note it will be transcribed to your notion, voice notes should not last more than 30 seconds.
 Need a bit more guidance? Type /help anytime to see what I can do for you or look at the Github repository: https://github.com/fulviodenza/notion-echo or join the official group: %s and ask to the developers
 	
 Remember, your privacy is paramount. I don't keep any of your data. Everything goes straight into your Notion, and nowhere else.`, os.Getenv(TELEGRAM_GROUP_URL))

@@ -194,6 +194,10 @@ func (b *Bot) Start(ctx context.Context) {
 		}
 
 		if update.Message.Voice != nil {
+			if update.Message.Voice.Duration > 30 {
+				b.SendMessage("Voice notes must not last more than 30 seconds", int(update.Message.Chat.ID), false, true)
+				continue
+			}
 			message, err := gladia.HandleTranscribe(ctx, b.TelegramClient, update.Message.Voice)
 			if err != nil {
 				b.Logger().WithFields(logrus.Fields{

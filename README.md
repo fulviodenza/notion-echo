@@ -30,6 +30,8 @@ Say goodbye to switching apps or losing thoughts in the shuffle—Notion-Echo Bo
 - `/getdefaultpage` - Get default page for your user.
 - `/deauthorize` - I will forget you
 
+If you send a voice note it will be transcribed to your notion, voice notes should not last more than 30 seconds.
+
 *: Please note that so far only **pdf, jpg, jpeg and png** are able to be uploaded into your page, also, if you are **uploading a picture**, you should upload it **without compression**
 
 ## Why Use notion-echo Bot?
