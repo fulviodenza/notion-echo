@@ -55,8 +55,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible h1:7qlOGliEKZXTDg6OTjfoBKDXWrumCAMpl/TFQ4/5kLM=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
-github.com/fulviodenza/go-gladia-client v0.2.1 h1:+70351hfPE8EehjkAbD+D0T8t+NehjGfbytDZpV8np4=
-github.com/fulviodenza/go-gladia-client v0.2.1/go.mod h1:h5xNpq6GDMJ6tjlPT2Q2sMO1cqxiN3V4rIgKh4Fi5w8=
+github.com/fulviodenza/go-gladia-client v0.2.2 h1:oJ82BYArQVCI4eqGP3SgDWmRqZbAMjQ7Vn57K7cH6AM=
+github.com/fulviodenza/go-gladia-client v0.2.2/go.mod h1:h5xNpq6GDMJ6tjlPT2Q2sMO1cqxiN3V4rIgKh4Fi5w8=
 github.com/go-openapi/inflect v0.19.0 h1:9jCH9scKIbHeV9m12SmPilScz6krDxKRasNNSNPXu/4=
 github.com/go-openapi/inflect v0.19.0/go.mod h1:lHpZVlpIQqLyKwJ4N+YSc9hchQy/i12fJykb83CRBH4=
 github.com/go-test/deep v1.0.3 h1:ZrJSEWsXzPOxaZnFteGEfooLba+ju3FYIbOrS+rQd68=
