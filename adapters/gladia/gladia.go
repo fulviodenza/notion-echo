@@ -44,7 +44,7 @@ func HandleTranscribe(ctx context.Context, bot *tgbotapi.BotAPI, voice *tgbotapi
 		return "", err
 	}
 
-	transcribeErr := client.Transcribe(ctx, result.AudioURL)
+	transcribeRes, transcribeErr := client.Transcribe(ctx, result.AudioURL)
 	if transcribeErr != nil {
 		log.Printf("Failed to start transcription: %v", transcribeErr)
 		return "", transcribeErr
@@ -68,7 +68,7 @@ func HandleTranscribe(ctx context.Context, bot *tgbotapi.BotAPI, voice *tgbotapi
 				return
 			case <-ticker.C:
 				// Poll for results from Gladia client
-				transcriptionResult, pollErr := client.GetTranscriptionResult(ctx, result.AudioMetadata.ID)
+				transcriptionResult, pollErr := client.GetTranscriptionResult(ctx, transcribeRes.ID)
 				if pollErr != nil {
 					log.Printf("Error polling for result: %v", pollErr)
 					continue
