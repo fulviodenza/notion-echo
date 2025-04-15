@@ -74,7 +74,7 @@ func HandleTranscribe(ctx context.Context, bot *tgbotapi.BotAPI, voice *tgbotapi
 					continue
 				}
 
-				if transcriptionResult.Status == "completed" {
+				if transcriptionResult.Status == "done" {
 					resultCh <- transcriptionResult.Result.Transcription.FullTranscript
 					return
 				} else if transcriptionResult.Status == "error" {
