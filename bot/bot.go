@@ -200,9 +200,7 @@ func (b *Bot) Start(ctx context.Context) {
 			}
 
 			b.SendMessage(
-				`Received transcription request, 
-				 please wait until your transcription will be ready, 
-				 a confirmation message will be sent`,
+				`Received transcription request, please wait until your transcription will be ready, a confirmation message will be sent`,
 				int(update.Message.Chat.ID), false, true)
 			message, err := gladia.HandleTranscribe(ctx, b.TelegramClient, update.Message.Voice)
 			if err != nil {
