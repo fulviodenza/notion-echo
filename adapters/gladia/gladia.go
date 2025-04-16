@@ -90,8 +90,10 @@ func HandleTranscribe(ctx context.Context, bot *tgbotapi.BotAPI, voice *tgbotapi
 	// Wait for either a result or an error
 	select {
 	case transcript := <-resultCh:
+		go client.DeleteTranscription(ctx, transcribeRes.ID)
 		return transcript, nil
 	case err := <-errCh:
+		go client.DeleteTranscription(ctx, transcribeRes.ID)
 		return "", err
 	case <-timeoutCtx.Done():
 		return "", fmt.Errorf("transcription timed out")
