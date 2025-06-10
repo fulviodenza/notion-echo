@@ -3,10 +3,14 @@ package notion
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
+	"mime"
 	"mime/multipart"
 	"net/http"
+	"net/textproto"
+	"path/filepath"
 
 	"github.com/jomei/notionapi"
 )
@@ -100,31 +104,42 @@ func ExtractName(props notionapi.Properties) string {
 
 type FileUploadResponse struct {
 	URL string `json:"url"`
+	ID  string `json:"id"`
+}
+
+type FileUploadObject struct {
+	Object     string `json:"object"`
+	ID         string `json:"id"`
+	UploadURL  string `json:"upload_url"`
+	Status     string `json:"status"`
+	ExpiryTime string `json:"expiry_time"`
 }
 
 func (ns *Service) UploadFile(ctx context.Context, fileName string, fileData []byte) (*FileUploadResponse, error) {
-	var b bytes.Buffer
-	w := multipart.NewWriter(&b)
-
-	fw, err := w.CreateFormFile("file", fileName)
+	fileUpload, err := ns.createFileUpload(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create file upload: %w", err)
 	}
 
-	_, err = fw.Write(fileData)
+	err = ns.sendFileContents(ctx, fileUpload.ID, fileName, fileData)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to send file contents: %w", err)
 	}
 
-	w.Close()
+	return &FileUploadResponse{
+		ID:  fileUpload.ID,
+		URL: fileUpload.UploadURL,
+	}, nil
+}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", "https://api.notion.com/v1/files", &b)
+func (ns *Service) createFileUpload(ctx context.Context) (*FileUploadObject, error) {
+	req, err := http.NewRequestWithContext(ctx, "POST", "https://api.notion.com/v1/file_uploads", bytes.NewReader([]byte("{}")))
 	if err != nil {
 		return nil, err
 	}
 
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", ns.Client.Token))
-	req.Header.Set("Content-Type", w.FormDataContentType())
+	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Notion-Version", "2022-06-28")
 
 	client := &http.Client{}
@@ -136,7 +151,7 @@ func (ns *Service) UploadFile(ctx context.Context, fileName string, fileData []b
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("failed to upload file: status %d, body: %s", resp.StatusCode, string(body))
+		return nil, fmt.Errorf("failed to create file upload: status %d, body: %s", resp.StatusCode, string(body))
 	}
 
 	body, err := io.ReadAll(resp.Body)
@@ -144,7 +159,79 @@ func (ns *Service) UploadFile(ctx context.Context, fileName string, fileData []b
 		return nil, err
 	}
 
-	return &FileUploadResponse{
-		URL: string(body),
-	}, nil
+	var fileUpload FileUploadObject
+	err = json.Unmarshal(body, &fileUpload)
+	if err != nil {
+		return nil, err
+	}
+
+	return &fileUpload, nil
+}
+
+func (ns *Service) sendFileContents(ctx context.Context, uploadID, fileName string, fileData []byte) error {
+	var b bytes.Buffer
+	w := multipart.NewWriter(&b)
+
+	contentType := mime.TypeByExtension(filepath.Ext(fileName))
+	if contentType == "" {
+		ext := filepath.Ext(fileName)
+		switch ext {
+		case ".jpg", ".jpeg":
+			contentType = "image/jpeg"
+		case ".png":
+			contentType = "image/png"
+		case ".gif":
+			contentType = "image/gif"
+		case ".pdf":
+			contentType = "application/pdf"
+		case ".txt":
+			contentType = "text/plain"
+		case ".doc":
+			contentType = "application/msword"
+		case ".docx":
+			contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+		default:
+			contentType = "application/octet-stream"
+		}
+	}
+
+	h := make(textproto.MIMEHeader)
+	h.Set("Content-Disposition", fmt.Sprintf(`form-data; name="file"; filename="%s"`, fileName))
+	h.Set("Content-Type", contentType)
+
+	fw, err := w.CreatePart(h)
+	if err != nil {
+		return err
+	}
+
+	_, err = fw.Write(fileData)
+	if err != nil {
+		return err
+	}
+
+	w.Close()
+
+	uploadURL := fmt.Sprintf("https://api.notion.com/v1/file_uploads/%s/send", uploadID)
+	req, err := http.NewRequestWithContext(ctx, "POST", uploadURL, &b)
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", ns.Client.Token))
+	req.Header.Set("Content-Type", w.FormDataContentType())
+	req.Header.Set("Notion-Version", "2022-06-28")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("failed to send file contents: status %d, body: %s", resp.StatusCode, string(body))
+	}
+
+	return nil
 }

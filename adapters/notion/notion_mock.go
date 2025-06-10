@@ -74,6 +74,7 @@ func (v *NotionMock) UploadFile(ctx context.Context, fileName string, fileData [
 		return nil, v.err
 	}
 	return &FileUploadResponse{
+		ID:  "mock-file-upload-id-" + fileName,
 		URL: "https://notion.so/uploaded/" + fileName,
 	}, nil
 }
