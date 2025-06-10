@@ -2,11 +2,12 @@
 
 <img src="./notion-echo-logo.png" style="width:200;height:200px;">
 
-Welcome to the notion-echo Bot, your seamless bridge between Telegram and Notion! Designed with productivity in mind, this bot effortlessly creates callout blocks in a Notion page of your choosing, enabling you to capture ideas, notes, and tasks without ever leaving your Telegram chat and allowing you to write notes on your Notion as you were writing to a friend on telegram. 
+Welcome to the notion-echo Bot, your seamless bridge between Telegram and Notion! Designed with productivity in mind, this bot effortlessly creates callout blocks in a Notion page of your choosing, enabling you to capture ideas, notes, and tasks without ever leaving your Telegram chat and allowing you to write notes on your Notion as you were writing to a friend on telegram.
 
 Say goodbye to switching apps or losing thoughts in the shuffle—Notion-Echo Bot simplifies your digital life without compromising on privacy or efficiency.
 
 **Key Features:**
+
 - **Instant Note Taking:** Quickly jot down notes directly from Telegram into your Notion page.
 - **Flexible Page Selection:** Choose exactly where each note lands in your Notion workspace.
 - **Privacy First:** Your data is yours alone. We never store user data, ensuring your notes and ideas remain confidential and secure.
@@ -24,7 +25,7 @@ Say goodbye to switching apps or losing thoughts in the shuffle—Notion-Echo Bo
 
 - `/help` - Displays this help message;
 - `/register` - Register your Notion notebook in the bot;
-- `/note [text]` - Write the text of the note on Notion or save the file*;
+- `/note [text]` - Write the text of the note on Notion or save the file\*;
 - `/note [--page "page_name"] [text]` - Write the note containing the text, on the page in the parenthesis ("");
 - `/defaultpage [page_name]` - Sets the default Notion page for your notes. Ensure this is an authorized page during registration;
 - `/getdefaultpage` - Get default page for your user.
@@ -32,7 +33,8 @@ Say goodbye to switching apps or losing thoughts in the shuffle—Notion-Echo Bo
 
 If you send a voice note it will be transcribed to your notion, voice notes should not last more than 30 seconds.
 
-*: Please note that so far only **pdf, jpg, jpeg and png** are able to be uploaded into your page, also, if you are **uploading a picture**, you should upload it **without compression**
+- Files upload support
+- Photo upload support
 
 ## Why Use notion-echo Bot?
 
@@ -48,18 +50,21 @@ For more information and updates, follow us on [GitHub](https://github.com/fulvi
 
 ## Contributing
 
-We welcome contributions of all kinds from the community. 
+We welcome contributions of all kinds from the community.
 
 If you're interested in helping improve notion-echo Bot submit an issue or if you want to discuss features/bugs/other join the [telegram group](https://t.me/+BOWbMpNPh6IzNTY0)
 
 ## Next features
+
 - Storage not depending on telegram but relying on ourself, so that the issue for docs visualization in notion is not broken
 - Monitoring (Prometheus)
 - Save new notes formats
-  
+
 ## Known issues
+
 - transcribe markdown
 
 ## Contributors:
+
 - [Diegghh](https://github.com/Diegghh)
 - [Ladvace](https://github.com/Ladvace)

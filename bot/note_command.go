@@ -63,14 +63,14 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *tgbotapi.Update) {
 	var noteText string
 	if !strings.Contains(messageText, "—page") {
 		noteText = strings.Replace(messageText, "/note", "", 1)
-		if noteText == "" {
+		if noteText == "" && update.Message.Document == nil && update.Message.Photo == nil {
 			cc.SetUserState(id, "/note")
 			cc.SendMessage("write your note in the next message", id, false, true)
 			return
 		}
 	}
 	// the noteText contains --page string
-	if noteText == "" {
+	if noteText == "" && update.Message.Document == nil && update.Message.Photo == nil {
 		parts := strings.SplitN(messageText, "\"", 3)
 		if len(parts) < 3 {
 			cc.SendMessage("Make sure you have enclosed the page name in quotes.", id, false, true)
