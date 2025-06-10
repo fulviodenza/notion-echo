@@ -22,6 +22,43 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+type FileUploadObject struct {
+	ID string `json:"id"`
+}
+
+type PdfWithFileUpload struct {
+	Type       string                `json:"type"`
+	FileUpload *FileUploadObject     `json:"file_upload,omitempty"`
+	File       *notionapi.FileObject `json:"file,omitempty"`
+}
+
+type BlockFileWithFileUpload struct {
+	Type       string                `json:"type"`
+	FileUpload *FileUploadObject     `json:"file_upload,omitempty"`
+	File       *notionapi.FileObject `json:"file,omitempty"`
+}
+
+type ImageWithFileUpload struct {
+	Type       string                `json:"type"`
+	FileUpload *FileUploadObject     `json:"file_upload,omitempty"`
+	File       *notionapi.FileObject `json:"file,omitempty"`
+}
+
+type PdfBlockWithFileUpload struct {
+	notionapi.BasicBlock
+	Pdf PdfWithFileUpload `json:"pdf"`
+}
+
+type FileBlockWithFileUpload struct {
+	notionapi.BasicBlock
+	File BlockFileWithFileUpload `json:"file"`
+}
+
+type ImageBlockWithFileUpload struct {
+	notionapi.BasicBlock
+	Image ImageWithFileUpload `json:"image"`
+}
+
 var _ types.ICommand = (*NoteCommand)(nil)
 
 const (
@@ -63,14 +100,13 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *tgbotapi.Update) {
 	var noteText string
 	if !strings.Contains(messageText, "—page") {
 		noteText = strings.Replace(messageText, "/note", "", 1)
-		if noteText == "" {
+		if noteText == "" && update.Message.Document == nil && update.Message.Photo == nil {
 			cc.SetUserState(id, "/note")
 			cc.SendMessage("write your note in the next message", id, false, true)
 			return
 		}
 	}
-	// the noteText contains --page string
-	if noteText == "" {
+	if noteText == "" && update.Message.Document == nil && update.Message.Photo == nil {
 		parts := strings.SplitN(messageText, "\"", 3)
 		if len(parts) < 3 {
 			cc.SendMessage("Make sure you have enclosed the page name in quotes.", id, false, true)
@@ -96,22 +132,22 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *tgbotapi.Update) {
 	}(id)
 
 	var err error
-	uploadedFileURL := ""
+	uploadedFileID := ""
 	children := []notionapi.Block{}
 	if update.Message.Document != nil && update.Message.Document.FileID != "" {
-		uploadedFileURL, err = downloadAndUploadDocument(ctx, cc.IBot, update.Message.Document, cc.buildNotionClient, cc.GetUserRepo(), id)
+		uploadedFileID, err = downloadAndUploadDocument(ctx, cc.IBot, update.Message.Document, cc.buildNotionClient, cc.GetUserRepo(), id)
 	}
 	if update.Message.Photo != nil {
 		cc.SendMessage(`uploading your photo to Notion...`, id, false, true)
-		uploadedFileURL, err = downloadAndUploadImage(ctx, cc.IBot, update.Message.Photo[0], cc.buildNotionClient, cc.GetUserRepo(), id)
+		uploadedFileID, err = downloadAndUploadImage(ctx, cc.IBot, update.Message.Photo[0], cc.buildNotionClient, cc.GetUserRepo(), id)
 	}
 	if err != nil {
 		cc.Logger().WithFields(logrus.Fields{"error": err}).Error("note error")
 		cc.SendMessage("file error", id, false, true)
 		return
 	}
-	if uploadedFileURL != "" {
-		children = append(children, buildBlockWithUploadedFile(uploadedFileURL, update.Message.Document, update.Message.Photo))
+	if uploadedFileID != "" {
+		children = append(children, buildBlockWithUploadedFile(uploadedFileID, update.Message.Document, update.Message.Photo))
 	}
 
 	blocks.Children = append(blocks.Children, buildCalloutBlock(noteText, children))
@@ -204,7 +240,7 @@ func downloadAndUploadDocument(ctx context.Context, bot types.IBot, ps *tgbotapi
 		return "", err
 	}
 
-	return uploadResp.URL, nil
+	return uploadResp.ID, nil
 }
 
 func downloadAndUploadImage(ctx context.Context, bot types.IBot, ps tgbotapi.PhotoSize, buildNotionClient func(ctx context.Context, userRepo db.UserRepoInterface, id int, token string) (notion.NotionInterface, error), userRepo db.UserRepoInterface, userID int) (string, error) {
@@ -243,34 +279,34 @@ func downloadAndUploadImage(ctx context.Context, bot types.IBot, ps tgbotapi.Pho
 		return "", err
 	}
 
-	return uploadResp.URL, nil
+	return uploadResp.ID, nil
 }
 
-func buildBlockWithUploadedFile(fileURL string, document *tgbotapi.Document, photo []tgbotapi.PhotoSize) (b notionapi.Block) {
+func buildBlockWithUploadedFile(fileID string, document *tgbotapi.Document, photo []tgbotapi.PhotoSize) (b notionapi.Block) {
 	if document != nil {
 		ext := utils.GetExt(document.FileName)
 		switch ext {
 		case "pdf":
-			b = buildPdfBlockWithURL(fileURL)
+			b = buildPdfBlockWithFileUpload(fileID)
 		default:
-			b = buildFileBlockWithURL(fileURL)
+			b = buildFileBlockWithFileUpload(fileID)
 		}
 	} else if photo != nil {
-		b = buildImageBlockWithURL(fileURL)
+		b = buildImageBlockWithFileUpload(fileID)
 	}
 	return b
 }
 
-func buildPdfBlockWithURL(url string) *notionapi.PdfBlock {
-	file := &notionapi.PdfBlock{
+func buildPdfBlockWithFileUpload(fileID string) *PdfBlockWithFileUpload {
+	file := &PdfBlockWithFileUpload{
 		BasicBlock: notionapi.BasicBlock{
 			Object: "block",
 			Type:   notionapi.BlockTypePdf,
 		},
-		Pdf: notionapi.Pdf{
-			Type: "file",
-			File: &notionapi.FileObject{
-				URL: url,
+		Pdf: PdfWithFileUpload{
+			Type: "file_upload",
+			FileUpload: &FileUploadObject{
+				ID: fileID,
 			},
 		},
 	}
@@ -299,31 +335,31 @@ func buildCalloutBlock(text string, children []notionapi.Block) *notionapi.Callo
 	return callout
 }
 
-func buildFileBlockWithURL(url string) *notionapi.FileBlock {
-	file := &notionapi.FileBlock{
+func buildFileBlockWithFileUpload(fileID string) *FileBlockWithFileUpload {
+	file := &FileBlockWithFileUpload{
 		BasicBlock: notionapi.BasicBlock{
 			Object: "block",
 			Type:   notionapi.BlockTypeFile,
 		},
-		File: notionapi.BlockFile{
-			Type: "file",
-			File: &notionapi.FileObject{
-				URL: url,
+		File: BlockFileWithFileUpload{
+			Type: "file_upload",
+			FileUpload: &FileUploadObject{
+				ID: fileID,
 			},
 		},
 	}
 	return file
 }
-func buildImageBlockWithURL(url string) *notionapi.ImageBlock {
-	image := &notionapi.ImageBlock{
+func buildImageBlockWithFileUpload(fileID string) *ImageBlockWithFileUpload {
+	image := &ImageBlockWithFileUpload{
 		BasicBlock: notionapi.BasicBlock{
 			Object: "block",
 			Type:   notionapi.BlockTypeImage,
 		},
-		Image: notionapi.Image{
-			Type: "file",
-			File: &notionapi.FileObject{
-				URL: url,
+		Image: ImageWithFileUpload{
+			Type: "file_upload",
+			FileUpload: &FileUploadObject{
+				ID: fileID,
 			},
 		},
 	}
