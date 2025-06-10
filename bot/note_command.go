@@ -3,7 +3,10 @@ package bot
 import (
 	"context"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 
 	tgbotapi "github.com/OvyFlash/telegram-bot-api"
@@ -93,23 +96,22 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *tgbotapi.Update) {
 	}(id)
 
 	var err error
-	filePath := ""
+	uploadedFileURL := ""
 	children := []notionapi.Block{}
 	if update.Message.Document != nil && update.Message.Document.FileID != "" {
-		filePath, err = downloadAndUploadDocument(cc.IBot, update.Message.Document)
+		uploadedFileURL, err = downloadAndUploadDocument(ctx, cc.IBot, update.Message.Document, cc.buildNotionClient, cc.GetUserRepo(), id)
 	}
 	if update.Message.Photo != nil {
-		cc.SendMessage(`ensure your photo is sent without compression!, 
-			I will save it for you but you could have issues in visualizing it`, id, false, true)
-		filePath, err = downloadAndUploadImage(cc.IBot, update.Message.Photo[0])
+		cc.SendMessage(`uploading your photo to Notion...`, id, false, true)
+		uploadedFileURL, err = downloadAndUploadImage(ctx, cc.IBot, update.Message.Photo[0], cc.buildNotionClient, cc.GetUserRepo(), id)
 	}
 	if err != nil {
 		cc.Logger().WithFields(logrus.Fields{"error": err}).Error("note error")
 		cc.SendMessage("file error", id, false, true)
 		return
 	}
-	if filePath != "" {
-		children = append(children, buildBlock(filePath))
+	if uploadedFileURL != "" {
+		children = append(children, buildBlockWithUploadedFile(uploadedFileURL, update.Message.Document, update.Message.Photo))
 	}
 
 	blocks.Children = append(blocks.Children, buildCalloutBlock(noteText, children))
@@ -162,47 +164,117 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *tgbotapi.Update) {
 	cc.SendMessage(fmt.Sprintf("%s on %s page", NOTE_SAVED, notion.ExtractName(page.Properties)), id, false, false)
 }
 
-func downloadAndUploadDocument(bot types.IBot, ps *tgbotapi.Document) (string, error) {
-	_, err := os.Create(ps.FileID)
-	if err != nil {
-		return "", err
-	}
-
-	// This get file is performed to be able to get
-	// the filename to retrieve
+func downloadAndUploadDocument(ctx context.Context, bot types.IBot, ps *tgbotapi.Document, buildNotionClient func(ctx context.Context, userRepo db.UserRepoInterface, id int, token string) (notion.NotionInterface, error), userRepo db.UserRepoInterface, userID int) (string, error) {
 	file, err := bot.GetTelegramClient().GetFile(tgbotapi.FileConfig{
 		FileID: ps.FileID,
 	})
 	if err != nil {
 		return "", err
 	}
-	return file.FilePath, os.Remove(ps.FileID)
-}
 
-func downloadAndUploadImage(bot types.IBot, ps tgbotapi.PhotoSize) (string, error) {
-	_, err := os.Create(ps.FileID)
+	fileURL := fmt.Sprintf("https://api.telegram.org/file/bot%s/%s", os.Getenv("TELEGRAM_TOKEN"), file.FilePath)
+	resp, err := http.Get(fileURL)
 	if err != nil {
 		return "", err
 	}
+	defer resp.Body.Close()
+
+	fileData, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	notionToken, err := userRepo.GetNotionTokenByID(ctx, userID)
+	if err != nil {
+		return "", err
+	}
+
+	notionClient, err := buildNotionClient(ctx, userRepo, userID, notionToken)
+	if err != nil {
+		return "", err
+	}
+
+	fileName := ps.FileName
+	if fileName == "" {
+		fileName = ps.FileID + filepath.Ext(file.FilePath)
+	}
+
+	uploadResp, err := notionClient.UploadFile(ctx, fileName, fileData)
+	if err != nil {
+		return "", err
+	}
+
+	return uploadResp.URL, nil
+}
+
+func downloadAndUploadImage(ctx context.Context, bot types.IBot, ps tgbotapi.PhotoSize, buildNotionClient func(ctx context.Context, userRepo db.UserRepoInterface, id int, token string) (notion.NotionInterface, error), userRepo db.UserRepoInterface, userID int) (string, error) {
 	file, err := bot.GetTelegramClient().GetFile(tgbotapi.FileConfig{
 		FileID: ps.FileID,
 	})
 	if err != nil {
 		return "", err
 	}
-	return file.FilePath, nil
+
+	fileURL := fmt.Sprintf("https://api.telegram.org/file/bot%s/%s", os.Getenv("TELEGRAM_TOKEN"), file.FilePath)
+	resp, err := http.Get(fileURL)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	fileData, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	notionToken, err := userRepo.GetNotionTokenByID(ctx, userID)
+	if err != nil {
+		return "", err
+	}
+
+	notionClient, err := buildNotionClient(ctx, userRepo, userID, notionToken)
+	if err != nil {
+		return "", err
+	}
+
+	fileName := ps.FileID + filepath.Ext(file.FilePath)
+	uploadResp, err := notionClient.UploadFile(ctx, fileName, fileData)
+	if err != nil {
+		return "", err
+	}
+
+	return uploadResp.URL, nil
 }
 
-func buildBlock(path string) (b notionapi.Block) {
-	ext := utils.GetExt(path)
-	// bot-allowed file extensions
-	switch ext {
-	case "pdf":
-		b = buildPdfBlock(path)
-	case "png", "jpg", "jpeg":
-		b = buildImageBlock(path)
+func buildBlockWithUploadedFile(fileURL string, document *tgbotapi.Document, photo []tgbotapi.PhotoSize) (b notionapi.Block) {
+	if document != nil {
+		ext := utils.GetExt(document.FileName)
+		switch ext {
+		case "pdf":
+			b = buildPdfBlockWithURL(fileURL)
+		default:
+			b = buildFileBlockWithURL(fileURL)
+		}
+	} else if photo != nil {
+		b = buildImageBlockWithURL(fileURL)
 	}
 	return b
+}
+
+func buildPdfBlockWithURL(url string) *notionapi.PdfBlock {
+	file := &notionapi.PdfBlock{
+		BasicBlock: notionapi.BasicBlock{
+			Object: "block",
+			Type:   notionapi.BlockTypePdf,
+		},
+		Pdf: notionapi.Pdf{
+			Type: "file",
+			File: &notionapi.FileObject{
+				URL: url,
+			},
+		},
+	}
+	return file
 }
 
 func buildCalloutBlock(text string, children []notionapi.Block) *notionapi.CalloutBlock {
@@ -227,33 +299,30 @@ func buildCalloutBlock(text string, children []notionapi.Block) *notionapi.Callo
 	return callout
 }
 
-func buildPdfBlock(path string) *notionapi.PdfBlock {
-	url := fmt.Sprintf("https://api.telegram.org/file/bot%s/%s", os.Getenv("TELEGRAM_TOKEN"), path)
-	file := &notionapi.PdfBlock{
+func buildFileBlockWithURL(url string) *notionapi.FileBlock {
+	file := &notionapi.FileBlock{
 		BasicBlock: notionapi.BasicBlock{
 			Object: "block",
-			Type:   notionapi.BlockTypePdf,
+			Type:   notionapi.BlockTypeFile,
 		},
-		Pdf: notionapi.Pdf{
-			Type: "external",
-			External: &notionapi.FileObject{
+		File: notionapi.BlockFile{
+			Type: "file",
+			File: &notionapi.FileObject{
 				URL: url,
 			},
 		},
 	}
 	return file
 }
-
-func buildImageBlock(path string) *notionapi.ImageBlock {
-	url := fmt.Sprintf("https://api.telegram.org/file/bot%s/%s", os.Getenv("TELEGRAM_TOKEN"), path)
+func buildImageBlockWithURL(url string) *notionapi.ImageBlock {
 	image := &notionapi.ImageBlock{
 		BasicBlock: notionapi.BasicBlock{
 			Object: "block",
 			Type:   notionapi.BlockTypeImage,
 		},
 		Image: notionapi.Image{
-			Type: "external",
-			External: &notionapi.FileObject{
+			Type: "file",
+			File: &notionapi.FileObject{
 				URL: url,
 			},
 		},

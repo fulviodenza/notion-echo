@@ -1,7 +1,12 @@
 package notion
 
 import (
+	"bytes"
 	"context"
+	"fmt"
+	"io"
+	"mime/multipart"
+	"net/http"
 
 	"github.com/jomei/notionapi"
 )
@@ -10,6 +15,7 @@ type NotionInterface interface {
 	SearchPage(ctx context.Context, pageName string) ([]*notionapi.Page, error)
 	Block() notionapi.BlockService
 	ListPages(ctx context.Context) ([]*notionapi.Page, error)
+	UploadFile(ctx context.Context, fileName string, fileData []byte) (*FileUploadResponse, error)
 }
 
 var _ NotionInterface = (*Service)(nil)
@@ -90,4 +96,55 @@ func ExtractName(props notionapi.Properties) string {
 		}
 	}
 	return ""
+}
+
+type FileUploadResponse struct {
+	URL string `json:"url"`
+}
+
+func (ns *Service) UploadFile(ctx context.Context, fileName string, fileData []byte) (*FileUploadResponse, error) {
+	var b bytes.Buffer
+	w := multipart.NewWriter(&b)
+
+	fw, err := w.CreateFormFile("file", fileName)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = fw.Write(fileData)
+	if err != nil {
+		return nil, err
+	}
+
+	w.Close()
+
+	req, err := http.NewRequestWithContext(ctx, "POST", "https://api.notion.com/v1/files", &b)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", ns.Client.Token))
+	req.Header.Set("Content-Type", w.FormDataContentType())
+	req.Header.Set("Notion-Version", "2022-06-28")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("failed to upload file: status %d, body: %s", resp.StatusCode, string(body))
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return &FileUploadResponse{
+		URL: string(body),
+	}, nil
 }
