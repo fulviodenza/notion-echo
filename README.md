@@ -54,17 +54,21 @@ We welcome contributions of all kinds from the community.
 
 If you're interested in helping improve notion-echo Bot submit an issue or if you want to discuss features/bugs/other join the [telegram group](https://t.me/+BOWbMpNPh6IzNTY0)
 
-## Next features
+## Next features 
 
-- Storage not depending on telegram but relying on ourself, so that the issue for docs visualization in notion is not broken
-- Monitoring (Prometheus)
-- Save new notes formats
+**new iteration**
+- [ ] Image OCR
+- [ ] Database support
+- [ ] Scheduled notes
+- [ ] Fast shortcuts like `/task`, `/idea`, `/reminder` for different note types and different pages
+- [ ] AI daily/weekly/monthly summaries (?)
+- [ ] Undo functionality
+- [ ] Usage analytics
+- [ ] Backup/export
+- [ ] Task management
 
-## Known issues
+[Open an issue](https://github.com/fulviodenza/notion-echo/issues/new) to suggest other features.
 
-- transcribe markdown
-
-## Contributors:
-
+## Contributors
 - [Diegghh](https://github.com/Diegghh)
 - [Ladvace](https://github.com/Ladvace)
