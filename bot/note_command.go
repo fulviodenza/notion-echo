@@ -22,43 +22,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type FileUploadObject struct {
-	ID string `json:"id"`
-}
-
-type PdfWithFileUpload struct {
-	Type       string                `json:"type"`
-	FileUpload *FileUploadObject     `json:"file_upload,omitempty"`
-	File       *notionapi.FileObject `json:"file,omitempty"`
-}
-
-type BlockFileWithFileUpload struct {
-	Type       string                `json:"type"`
-	FileUpload *FileUploadObject     `json:"file_upload,omitempty"`
-	File       *notionapi.FileObject `json:"file,omitempty"`
-}
-
-type ImageWithFileUpload struct {
-	Type       string                `json:"type"`
-	FileUpload *FileUploadObject     `json:"file_upload,omitempty"`
-	File       *notionapi.FileObject `json:"file,omitempty"`
-}
-
-type PdfBlockWithFileUpload struct {
-	notionapi.BasicBlock
-	Pdf PdfWithFileUpload `json:"pdf"`
-}
-
-type FileBlockWithFileUpload struct {
-	notionapi.BasicBlock
-	File BlockFileWithFileUpload `json:"file"`
-}
-
-type ImageBlockWithFileUpload struct {
-	notionapi.BasicBlock
-	Image ImageWithFileUpload `json:"image"`
-}
-
 var _ types.ICommand = (*NoteCommand)(nil)
 
 const (
@@ -100,13 +63,14 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *tgbotapi.Update) {
 	var noteText string
 	if !strings.Contains(messageText, "—page") {
 		noteText = strings.Replace(messageText, "/note", "", 1)
-		if noteText == "" && update.Message.Document == nil && update.Message.Photo == nil {
+		if noteText == "" {
 			cc.SetUserState(id, "/note")
 			cc.SendMessage("write your note in the next message", id, false, true)
 			return
 		}
 	}
-	if noteText == "" && update.Message.Document == nil && update.Message.Photo == nil {
+	// the noteText contains --page string
+	if noteText == "" {
 		parts := strings.SplitN(messageText, "\"", 3)
 		if len(parts) < 3 {
 			cc.SendMessage("Make sure you have enclosed the page name in quotes.", id, false, true)
@@ -139,7 +103,9 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *tgbotapi.Update) {
 	}
 	if update.Message.Photo != nil {
 		cc.SendMessage(`uploading your photo to Notion...`, id, false, true)
-		uploadedFileID, err = downloadAndUploadImage(ctx, cc.IBot, update.Message.Photo[0], cc.buildNotionClient, cc.GetUserRepo(), id)
+		// Select the largest photo size instead of the first one
+		largestPhoto := getLargestPhotoSize(update.Message.Photo)
+		uploadedFileID, err = downloadAndUploadImage(ctx, cc.IBot, largestPhoto, cc.buildNotionClient, cc.GetUserRepo(), id)
 	}
 	if err != nil {
 		cc.Logger().WithFields(logrus.Fields{"error": err}).Error("note error")
@@ -313,6 +279,38 @@ func buildPdfBlockWithFileUpload(fileID string) *PdfBlockWithFileUpload {
 	return file
 }
 
+func buildFileBlockWithFileUpload(fileID string) *FileBlockWithFileUpload {
+	file := &FileBlockWithFileUpload{
+		BasicBlock: notionapi.BasicBlock{
+			Object: "block",
+			Type:   notionapi.BlockTypeFile,
+		},
+		File: BlockFileWithFileUpload{
+			Type: "file_upload",
+			FileUpload: &FileUploadObject{
+				ID: fileID,
+			},
+		},
+	}
+	return file
+}
+
+func buildImageBlockWithFileUpload(fileID string) *ImageBlockWithFileUpload {
+	image := &ImageBlockWithFileUpload{
+		BasicBlock: notionapi.BasicBlock{
+			Object: "block",
+			Type:   notionapi.BlockTypeImage,
+		},
+		Image: ImageWithFileUpload{
+			Type: "file_upload",
+			FileUpload: &FileUploadObject{
+				ID: fileID,
+			},
+		},
+	}
+	return image
+}
+
 func buildCalloutBlock(text string, children []notionapi.Block) *notionapi.CalloutBlock {
 	callout := &notionapi.CalloutBlock{
 		BasicBlock: notionapi.BasicBlock{
@@ -335,33 +333,55 @@ func buildCalloutBlock(text string, children []notionapi.Block) *notionapi.Callo
 	return callout
 }
 
-func buildFileBlockWithFileUpload(fileID string) *FileBlockWithFileUpload {
-	file := &FileBlockWithFileUpload{
-		BasicBlock: notionapi.BasicBlock{
-			Object: "block",
-			Type:   notionapi.BlockTypeFile,
-		},
-		File: BlockFileWithFileUpload{
-			Type: "file_upload",
-			FileUpload: &FileUploadObject{
-				ID: fileID,
-			},
-		},
+func getLargestPhotoSize(photoSizes []tgbotapi.PhotoSize) tgbotapi.PhotoSize {
+	var largestPhoto tgbotapi.PhotoSize
+	var maxSize int
+
+	for _, size := range photoSizes {
+		if size.FileSize > maxSize {
+			maxSize = size.FileSize
+			largestPhoto = size
+		}
 	}
-	return file
+
+	return largestPhoto
 }
-func buildImageBlockWithFileUpload(fileID string) *ImageBlockWithFileUpload {
-	image := &ImageBlockWithFileUpload{
-		BasicBlock: notionapi.BasicBlock{
-			Object: "block",
-			Type:   notionapi.BlockTypeImage,
-		},
-		Image: ImageWithFileUpload{
-			Type: "file_upload",
-			FileUpload: &FileUploadObject{
-				ID: fileID,
-			},
-		},
-	}
-	return image
+
+// Custom types to support file uploads since notionapi doesn't have them yet
+type FileUploadObject struct {
+	ID string `json:"id"`
+}
+
+type PdfWithFileUpload struct {
+	Type       string                `json:"type"`
+	FileUpload *FileUploadObject     `json:"file_upload,omitempty"`
+	File       *notionapi.FileObject `json:"file,omitempty"`
+}
+
+type BlockFileWithFileUpload struct {
+	Type       string                `json:"type"`
+	FileUpload *FileUploadObject     `json:"file_upload,omitempty"`
+	File       *notionapi.FileObject `json:"file,omitempty"`
+}
+
+type ImageWithFileUpload struct {
+	Type       string                `json:"type"`
+	FileUpload *FileUploadObject     `json:"file_upload,omitempty"`
+	File       *notionapi.FileObject `json:"file,omitempty"`
+}
+
+// Custom block types
+type PdfBlockWithFileUpload struct {
+	notionapi.BasicBlock
+	Pdf PdfWithFileUpload `json:"pdf"`
+}
+
+type FileBlockWithFileUpload struct {
+	notionapi.BasicBlock
+	File BlockFileWithFileUpload `json:"file"`
+}
+
+type ImageBlockWithFileUpload struct {
+	notionapi.BasicBlock
+	Image ImageWithFileUpload `json:"image"`
 }
