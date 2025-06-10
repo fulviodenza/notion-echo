@@ -68,3 +68,12 @@ func (bsm BlockServiceMock) Update(ctx context.Context, id notionapi.BlockID, re
 func (bsm BlockServiceMock) Delete(context.Context, notionapi.BlockID) (notionapi.Block, error) {
 	return &notionapi.CalloutBlock{}, nil
 }
+
+func (v *NotionMock) UploadFile(ctx context.Context, fileName string, fileData []byte) (*FileUploadResponse, error) {
+	if v.err != nil {
+		return nil, v.err
+	}
+	return &FileUploadResponse{
+		URL: "https://notion.so/uploaded/" + fileName,
+	}, nil
+}
