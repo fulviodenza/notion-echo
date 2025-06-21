@@ -22,8 +22,6 @@ type RegisterCommand struct {
 	generateStateToken func() (string, error)
 }
 
-var N8N_WEBHOOK_URL = os.Getenv("N8N_WEBHOOK_URL")
-
 func NewRegisterCommand(bot types.IBot, generateStateToken func() (string, error)) types.Command {
 	hc := RegisterCommand{
 		IBot:               bot,
@@ -38,7 +36,7 @@ func (rc *RegisterCommand) Execute(ctx context.Context, update *tgbotapi.Update)
 
 	metrics.RegisterCount.With(prometheus.Labels{"id": fmt.Sprint(id)}).Inc()
 
-	req, err := http.NewRequest(http.MethodGet, N8N_WEBHOOK_URL, nil)
+	req, err := http.NewRequest(http.MethodGet, os.Getenv("N8N_WEBHOOK_URL"), nil)
 	if err != nil {
 		rc.Logger().Infof("client: error making http request: %s\n", err)
 	}
