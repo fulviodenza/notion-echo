@@ -2,6 +2,8 @@
 
 <img src="./notion-echo-logo.png" style="width:200;height:200px;">
 
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/J3J01GT7A1)
+
 Welcome to the notion-echo Bot, your seamless bridge between Telegram and Notion! Designed with productivity in mind, this bot effortlessly creates callout blocks in a Notion page of your choosing, enabling you to capture ideas, notes, and tasks without ever leaving your Telegram chat and allowing you to write notes on your Notion as you were writing to a friend on telegram.
 
 Say goodbye to switching apps or losing thoughts in the shuffle—Notion-Echo Bot simplifies your digital life without compromising on privacy or efficiency.
@@ -54,9 +56,10 @@ We welcome contributions of all kinds from the community.
 
 If you're interested in helping improve notion-echo Bot submit an issue or if you want to discuss features/bugs/other join the [telegram group](https://t.me/+BOWbMpNPh6IzNTY0)
 
-## Next features 
+## Next features
 
 **new iteration**
+
 - [ ] Image OCR
 - [ ] Database support
 - [ ] Scheduled notes
@@ -70,5 +73,6 @@ If you're interested in helping improve notion-echo Bot submit an issue or if yo
 [Open an issue](https://github.com/fulviodenza/notion-echo/issues/new) to suggest other features.
 
 ## Contributors
+
 - [Diegghh](https://github.com/Diegghh)
 - [Ladvace](https://github.com/Ladvace)
