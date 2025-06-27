@@ -3,7 +3,6 @@ package bot
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"net/url"
 	"os"
 
@@ -35,16 +34,6 @@ func (rc *RegisterCommand) Execute(ctx context.Context, update *tgbotapi.Update)
 	rc.Logger().Infof("[RegisterCommand] got registration request from %d", id)
 
 	metrics.RegisterCount.With(prometheus.Labels{"id": fmt.Sprint(id)}).Inc()
-
-	req, err := http.NewRequest(http.MethodGet, os.Getenv("N8N_WEBHOOK_URL"), nil)
-	if err != nil {
-		rc.Logger().Infof("client: error making http request: %s\n", err)
-	}
-
-	_, err = http.DefaultClient.Do(req)
-	if err != nil {
-		rc.Logger().Infof("client: error making http request: %s\n", err)
-	}
 
 	stateToken, err := rc.generateStateToken()
 	if err != nil {
