@@ -67,11 +67,27 @@ func (ur *UserRepo) GetStateTokenById(ctx context.Context, id int) (*ent.User, e
 }
 
 func (ur *UserRepo) SaveNotionTokenByStateToken(ctx context.Context, notionToken, stateToken string) (*ent.User, error) {
-	err := ur.User.Update().SetNotionToken(notionToken).Where(user.StateTokenEQ(stateToken)).Exec(ctx)
+	// First, check if a user with this state token exists
+	users, err := ur.User.Query().Where(user.StateTokenEQ(stateToken)).All(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to query user by state token: %w", err)
 	}
-	return nil, nil
+
+	if len(users) == 0 {
+		return nil, fmt.Errorf("no user found with state token: %s", stateToken)
+	}
+
+	if len(users) > 1 {
+		return nil, fmt.Errorf("multiple users found with state token: %s", stateToken)
+	}
+
+	// Update the user and return the updated entity
+	updatedUser, err := ur.User.UpdateOneID(users[0].ID).SetNotionToken(notionToken).Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update notion token: %w", err)
+	}
+
+	return updatedUser, nil
 }
 
 func (ur *UserRepo) GetNotionTokenByID(ctx context.Context, id int) (string, error) {
@@ -101,4 +117,13 @@ func (ur *UserRepo) GetDefaultPage(ctx context.Context, id int) (string, error) 
 func (ur *UserRepo) DeleteUser(ctx context.Context, id int) error {
 	_, err := ur.User.Delete().Where(user.IDEQ(id)).Exec(ctx)
 	return err
+}
+
+// Debug method to help troubleshoot state token issues
+func (ur *UserRepo) DebugStateToken(ctx context.Context, stateToken string) (*ent.User, error) {
+	user, err := ur.User.Query().Where(user.StateTokenEQ(stateToken)).Only(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("debug: no user found with state token '%s': %w", stateToken, err)
+	}
+	return user, nil
 }
