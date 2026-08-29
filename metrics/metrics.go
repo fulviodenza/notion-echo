@@ -48,4 +48,16 @@ var (
 		Name:      "register",
 		Help:      "register command gauge",
 	}, []string{"id"})
+	ListDbCount = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: "notion_echo",
+		Subsystem: "commands",
+		Name:      "listdb",
+		Help:      "listdb command gauge",
+	}, []string{"id"})
+	DbNoteCount = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: "notion_echo",
+		Subsystem: "commands",
+		Name:      "dbnote",
+		Help:      "dbnote command gauge",
+	}, []string{"id"})
 )

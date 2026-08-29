@@ -17,6 +17,8 @@ import (
 
 type NotionInterface interface {
 	SearchPage(ctx context.Context, pageName string) ([]*notionapi.Page, error)
+	SearchDatabase(ctx context.Context, databaseName string) ([]*notionapi.Database, error)
+	CreatePage(ctx context.Context, req *notionapi.PageCreateRequest) (*notionapi.Page, error)
 	Block() notionapi.BlockService
 	ListPages(ctx context.Context) ([]*notionapi.Page, error)
 	UploadFile(ctx context.Context, fileName string, fileData []byte) (*FileUploadResponse, error)
@@ -77,6 +79,32 @@ func (ns *Service) SearchPage(ctx context.Context, pageName string) ([]*notionap
 	return pages, nil
 }
 
+func (ns *Service) SearchDatabase(ctx context.Context, databaseName string) ([]*notionapi.Database, error) {
+	res, err := ns.Search.Do(ctx, &notionapi.SearchRequest{
+		Query: databaseName,
+		Filter: notionapi.SearchFilter{
+			Value:    "database",
+			Property: "object",
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	databases := []*notionapi.Database{}
+	for _, obj := range res.Results {
+		if db, ok := obj.(*notionapi.Database); ok {
+			databases = append(databases, db)
+		}
+	}
+
+	return databases, nil
+}
+
+func (ns *Service) CreatePage(ctx context.Context, req *notionapi.PageCreateRequest) (*notionapi.Page, error) {
+	return ns.Page.Create(ctx, req)
+}
+
 func (ns *Service) Block() notionapi.BlockService {
 	return ns.Client.Block
 }
@@ -86,6 +114,20 @@ type NotionPageName struct {
 	Select      string   `json:"select,omitempty"`
 	MultiSelect []string `json:"multi_select,omitempty"`
 	Status      string   `json:"status,omitempty"`
+}
+
+// ExtractRichText returns the plain text of the first rich-text element, used
+// for database titles (which are a []RichText rather than a title property).
+func ExtractRichText(rt []notionapi.RichText) string {
+	if len(rt) > 0 {
+		if rt[0].Text != nil && rt[0].Text.Content != "" {
+			return rt[0].Text.Content
+		}
+		if rt[0].PlainText != "" {
+			return rt[0].PlainText
+		}
+	}
+	return ""
 }
 
 func ExtractName(props notionapi.Properties) string {

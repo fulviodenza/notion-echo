@@ -9,8 +9,10 @@ import (
 var _ NotionInterface = (*NotionMock)(nil)
 
 type NotionMock struct {
-	pages map[string]*notionapi.Page
-	err   error
+	pages       map[string]*notionapi.Page
+	databases   map[string]*notionapi.Database
+	createdPage *notionapi.PageCreateRequest
+	err         error
 }
 
 func (v *NotionMock) ListPages(ctx context.Context) ([]*notionapi.Page, error) {
@@ -27,6 +29,44 @@ func NewNotionMock(pages map[string]*notionapi.Page, err error) NotionInterface 
 		pages: pages,
 		err:   err,
 	}
+}
+
+func NewNotionMockWithDatabases(pages map[string]*notionapi.Page, databases map[string]*notionapi.Database, err error) *NotionMock {
+	return &NotionMock{
+		pages:     pages,
+		databases: databases,
+		err:       err,
+	}
+}
+
+func (v *NotionMock) SearchDatabase(ctx context.Context, databaseName string) ([]*notionapi.Database, error) {
+	if v.err != nil {
+		return nil, v.err
+	}
+
+	databases := []*notionapi.Database{}
+	for _, d := range v.databases {
+		databases = append(databases, d)
+	}
+
+	return databases, nil
+}
+
+func (v *NotionMock) CreatePage(ctx context.Context, req *notionapi.PageCreateRequest) (*notionapi.Page, error) {
+	if v.err != nil {
+		return nil, v.err
+	}
+	v.createdPage = req
+	return &notionapi.Page{
+		ID:         "mock-created-page",
+		Properties: req.Properties,
+	}, nil
+}
+
+// CreatedPage exposes the last PageCreateRequest passed to CreatePage so tests
+// can assert on the properties the command built.
+func (v *NotionMock) CreatedPage() *notionapi.PageCreateRequest {
+	return v.createdPage
 }
 
 func (v *NotionMock) SearchPage(ctx context.Context, pageName string) ([]*notionapi.Page, error) {

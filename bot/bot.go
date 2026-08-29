@@ -448,6 +448,8 @@ func (b *Bot) initializeHandlers() map[string]func(ctx context.Context, update *
 		utils.COMMAND_DEFAULT_PAGE:     NewDefaultPageCommand(b, buildNotionClient),
 		utils.COMMAND_GET_DEFAULT_PAGE: NewGetDefaultPageCommand(b),
 		utils.COMMAND_DEAUTHORIZE:      NewDeauthorizeCommand(b),
+		utils.COMMAND_LIST_DB:          NewListDatabasesCommand(b, buildNotionClient),
+		utils.COMMAND_DB_NOTE:          NewDbNoteCommand(b, buildNotionClient),
 		// admin command
 		utils.COMMAND_SEND_ALL: NewSendAllCommand(b),
 	}
