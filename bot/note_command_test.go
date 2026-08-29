@@ -74,7 +74,7 @@ func TestNoteCommandExecute(t *testing.T) {
 		{
 			"save note",
 			fields{
-				update: update(withMessage("/note —page \"testPage\" test"), withId(1)),
+				update: update(withMessage("/note --page \"testPage\" test"), withId(1)),
 				envs:   map[string]string{},
 				bot: bot(withUserRepo(&db.UserRepoMock{
 					Db: map[int]*ent.User{
@@ -112,9 +112,9 @@ func TestNoteCommandExecute(t *testing.T) {
 			false,
 		},
 		{
-			"save note with no default page in db",
+			"save note with page flag after the note text",
 			fields{
-				update: update(withMessage("/note —page \"testPage\" test"), withId(1)),
+				update: update(withMessage("/note test --page \"testPage\""), withId(1)),
 				envs:   map[string]string{},
 				bot: bot(withUserRepo(&db.UserRepoMock{
 					Db: map[int]*ent.User{},
