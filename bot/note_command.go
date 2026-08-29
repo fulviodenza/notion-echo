@@ -28,6 +28,43 @@ const (
 	NOTE_SAVED = "note saved"
 )
 
+// pageFlags are the accepted spellings of the page selector flag. Telegram (and
+// some keyboards/autocorrect) may turn the documented "--page" into an em/en dash,
+// so we accept all of them.
+var pageFlags = []string{"--page", "—page", "–page"}
+
+var errPageNameNotQuoted = fmt.Errorf("page name must be enclosed in quotes")
+
+// parseNoteMessage extracts the target page name and the note text from a /note
+// command message. The page selector flag may appear anywhere in the message
+// (before or after the note text), and the note text on both sides of the flag is
+// preserved. hasPageFlag reports whether a page flag was present at all, so the
+// caller can distinguish "no flag" from "flag with an empty page name".
+func parseNoteMessage(messageText string) (pageName, noteText string, hasPageFlag bool, err error) {
+	text := strings.TrimSpace(strings.Replace(messageText, "/note", "", 1))
+
+	flagIdx, flagLen := -1, 0
+	for _, flag := range pageFlags {
+		if i := strings.Index(text, flag); i != -1 {
+			flagIdx, flagLen = i, len(flag)
+			break
+		}
+	}
+	if flagIdx == -1 {
+		return "", text, false, nil
+	}
+
+	parts := strings.SplitN(text[flagIdx+flagLen:], "\"", 3)
+	if len(parts) < 3 {
+		return "", "", true, errPageNameNotQuoted
+	}
+	pageName = strings.TrimSpace(parts[1])
+	before := strings.TrimSpace(text[:flagIdx])
+	after := strings.TrimSpace(parts[2])
+	noteText = strings.TrimSpace(before + " " + after)
+	return pageName, noteText, true, nil
+}
+
 var BotEmoji = notionapi.Emoji("🤖")
 
 type NoteCommand struct {
@@ -59,35 +96,19 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *tgbotapi.Update) {
 	if update.Message.Caption != "" {
 		messageText = update.Message.Caption
 	}
-	var pageName string
-	var noteText string
-	if !strings.Contains(messageText, "—page") {
-		noteText = strings.Replace(messageText, "/note", "", 1)
-		if noteText == "" && update.Message.Document == nil && update.Message.Photo == nil {
-			cc.SetUserState(id, "/note")
-			cc.SendMessage("write your note in the next message", id, false, true)
-			return
-		}
+	pageName, noteText, hasPageFlag, parseErr := parseNoteMessage(messageText)
+	if parseErr != nil {
+		cc.SendMessage("Make sure you have enclosed the page name in quotes.", id, false, true)
+		return
 	}
-	// the noteText contains --page string
+	if hasPageFlag && pageName == "" {
+		cc.SendMessage("No page name specified.", id, false, true)
+		return
+	}
 	if noteText == "" && update.Message.Document == nil && update.Message.Photo == nil {
-		parts := strings.SplitN(messageText, "\"", 3)
-		if len(parts) < 3 {
-			cc.SendMessage("Make sure you have enclosed the page name in quotes.", id, false, true)
-			return
-		}
-		pageName = parts[1]
-		noteText = parts[2]
-		if pageName == "" {
-			cc.SendMessage("No page name specified.", id, false, true)
-			return
-		}
-		if noteText == "" {
-			cc.SetUserState(id, "/note")
-			cc.SendMessage("write your note in the next message", id, false, true)
-			return
-		}
-
+		cc.SetUserState(id, "/note")
+		cc.SendMessage("write your note in the next message", id, false, true)
+		return
 	}
 	defer func(userID int) {
 		if cc.GetUserState(userID) != "" {
