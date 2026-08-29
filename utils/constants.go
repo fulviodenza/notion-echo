@@ -27,6 +27,8 @@ Here is how to get started:
 - /register - Register your Notion notebook in the bot;
 - /note text - Write the text of the note or upload a pdf, jpg, jpeg or png (for images and documents ensure to add /note in the caption before sending the media);
 - /note --page "page_name" text - Write the note containing the text, on the page in the parenthesis ("");
+- /listdb - List the Notion databases I can access (share a database with me during /register to add it);
+- /dbnote "database_name" text - Create a new row in the database with the text as its title. Add --today to stamp today's date, --date "YYYY-MM-DD" for a specific date, --status "value" or --select "value" to set those properties;
 - /defaultpage - Sets the default Notion page for your notes. Ensure this is an authorized page during registration;
 - /getdefaultpage - Get default page you selected with /defaultpage page_name;
 - /deauthorize - I will forget you;
@@ -46,6 +48,8 @@ const (
 	COMMAND_DEAUTHORIZE      = "/deauthorize"
 	COMMAND_GET_DEFAULT_PAGE = "/getdefaultpage"
 	COMMAND_SEND_ALL         = "/send_all"
+	COMMAND_LIST_DB          = "/listdb"
+	COMMAND_DB_NOTE          = "/dbnote"
 )
 
 const (
