@@ -107,7 +107,11 @@ func (dc *DbNoteCommand) Execute(ctx context.Context, update *tgbotapi.Update) {
 		dc.SendMessage(notionerrors.ErrDatabaseNotFound.Error(), id, false, true)
 		return
 	}
-	database := databases[0]
+	database, ok := selectDatabase(databases, req.dbName)
+	if !ok {
+		dc.SendMessage(notionerrors.ErrDatabaseNotFound.Error(), id, false, true)
+		return
+	}
 
 	props, warnings, err := dc.buildProperties(database, req)
 	if err != nil {
@@ -181,6 +185,23 @@ func (dc *DbNoteCommand) buildProperties(database *notionapi.Database, req dbNot
 	}
 
 	return props, warnings, nil
+}
+
+// selectDatabase picks the database the user actually named. Notion's search is
+// fuzzy and ranks by relevance, so databases[0] is often the wrong one when the
+// account has several similarly named databases (e.g. asking for "Expenses" but
+// "Post-its" ranks first). We therefore prefer an exact, case-insensitive title
+// match and only fall back to the sole result when the search was unambiguous.
+func selectDatabase(databases []*notionapi.Database, name string) (*notionapi.Database, bool) {
+	for _, db := range databases {
+		if strings.EqualFold(strings.TrimSpace(notion.ExtractRichText(db.Title)), strings.TrimSpace(name)) {
+			return db, true
+		}
+	}
+	if len(databases) == 1 {
+		return databases[0], true
+	}
+	return nil, false
 }
 
 // parseDbNoteMessage extracts the target database name, the entry title, and any

@@ -25,6 +25,68 @@ func financeDB() *notionapi.Database {
 	}
 }
 
+func namedDB(id, title string) *notionapi.Database {
+	return &notionapi.Database{
+		ID:    notionapi.ObjectID(id),
+		Title: []notionapi.RichText{{Text: &notionapi.Text{Content: title}}},
+		Properties: notionapi.PropertyConfigs{
+			"Name": notionapi.TitlePropertyConfig{Type: notionapi.PropertyConfigTypeTitle},
+		},
+	}
+}
+
+func TestSelectDatabase(t *testing.T) {
+	expenses := namedDB("db-exp", "silly little Expenses (database)")
+	postits := namedDB("db-post", "silly little Post-its (database)")
+
+	tests := []struct {
+		name      string
+		databases []*notionapi.Database
+		query     string
+		wantID    notionapi.ObjectID
+		wantOk    bool
+	}{
+		{
+			name:      "exact match wins over fuzzy first result",
+			databases: []*notionapi.Database{postits, expenses},
+			query:     "silly little Expenses (database)",
+			wantID:    "db-exp",
+			wantOk:    true,
+		},
+		{
+			name:      "case-insensitive exact match",
+			databases: []*notionapi.Database{postits, expenses},
+			query:     "SILLY LITTLE expenses (database)",
+			wantID:    "db-exp",
+			wantOk:    true,
+		},
+		{
+			name:      "single fuzzy result is used",
+			databases: []*notionapi.Database{expenses},
+			query:     "Expenses",
+			wantID:    "db-exp",
+			wantOk:    true,
+		},
+		{
+			name:      "no exact match among several is rejected",
+			databases: []*notionapi.Database{postits, expenses},
+			query:     "Groceries",
+			wantOk:    false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, ok := selectDatabase(tt.databases, tt.query)
+			if ok != tt.wantOk {
+				t.Fatalf("selectDatabase() ok = %v, want %v", ok, tt.wantOk)
+			}
+			if tt.wantOk && got.ID != tt.wantID {
+				t.Errorf("selectDatabase() id = %q, want %q", got.ID, tt.wantID)
+			}
+		})
+	}
+}
+
 func TestParseDbNoteMessage(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -167,6 +229,16 @@ func TestDbNoteCommandExecute(t *testing.T) {
 			message:   `/dbnote "Groceries" milk`,
 			databases: map[string]*notionapi.Database{},
 			want:      []string{boterrors.ErrDatabaseNotFound.Error()},
+		},
+		{
+			name:    "picks the named database, not the first fuzzy result",
+			message: `/dbnote "Expenses" coffee 3.50`,
+			databases: map[string]*notionapi.Database{
+				"postits":  namedDB("db-post", "Post-its"),
+				"expenses": namedDB("db-exp", "Expenses"),
+			},
+			want:      []string{"entry added to Expenses"},
+			wantTitle: "coffee 3.50",
 		},
 		{
 			name:    "missing quotes",
