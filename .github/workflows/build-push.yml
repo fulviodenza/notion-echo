@@ -1,0 +1,43 @@
+name: Build, push & deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-push:
+    # In-cluster self-hosted runner: registry.fulvio.dev resolves to Harbor's
+    # ClusterIP via split-horizon DNS, so pushes bypass Cloudflare's upload cap.
+    # Docker talks to the DinD sidecar (DOCKER_HOST=tcp://localhost:2375).
+    runs-on: [self-hosted, home]
+    env:
+      IMG: registry.fulvio.dev/notion-echo/notion-echo
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Test
+        run: docker run --rm -v "$PWD":/app -w /app golang:1.24 go test ./...
+
+      - name: Log in to Harbor
+        # Secrets go through env, not inline interpolation: a robot name can
+        # contain a `$` that bash would otherwise expand away.
+        env:
+          HARBOR_USER: ${{ secrets.HARBOR_USER }}
+          HARBOR_TOKEN: ${{ secrets.HARBOR_TOKEN }}
+        run: echo "$HARBOR_TOKEN" | docker login registry.fulvio.dev -u "$HARBOR_USER" --password-stdin
+
+      - name: Build & push
+        run: |
+          docker build -t "$IMG:${{ github.sha }}" -t "$IMG:latest" .
+          docker push "$IMG:${{ github.sha }}"
+          docker push "$IMG:latest"
+
+      - name: Deploy
+        # Uses the runner pod's in-cluster ServiceAccount (github-runner-notion-echo),
+        # which is RBAC-bound to restart the notion-echo Deployment.
+        run: |
+          curl -sSLo /tmp/kubectl "https://dl.k8s.io/release/$(curl -sSL https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x /tmp/kubectl
+          /tmp/kubectl -n notion-echo set image deployment/notion-echo notion-echo="$IMG:${{ github.sha }}"
+          /tmp/kubectl -n notion-echo rollout status deployment/notion-echo --timeout=180s
