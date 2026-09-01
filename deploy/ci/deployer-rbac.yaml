@@ -1,0 +1,27 @@
+# Lets the notion-echo runner (ServiceAccount in the ci namespace) restart the
+# app Deployment in the notion-echo namespace after pushing a new image, so the
+# workflow's "kubectl rollout restart" step works with in-cluster credentials.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: notion-echo-deployer
+  namespace: notion-echo
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "watch", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: notion-echo-deployer
+  namespace: notion-echo
+subjects:
+  - kind: ServiceAccount
+    name: github-runner-notion-echo
+    namespace: ci
+roleRef:
+  kind: Role
+  name: notion-echo-deployer
+  apiGroup: rbac.authorization.k8s.io

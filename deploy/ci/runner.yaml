@@ -1,0 +1,111 @@
+# Self-hosted GitHub Actions runner for fulviodenza/notion-echo.
+#
+# Personal-account runners are per-repository, so this is a dedicated clone of
+# the fulvio.dev runner (github-runner-fulviodev) bound to this repo. It runs an
+# in-cluster Docker-in-Docker sidecar so builds can push straight to Harbor's
+# ClusterIP (registry.fulvio.dev via split-horizon DNS), bypassing Cloudflare's
+# upload cap.
+#
+# The registration-token secret (github-runner-notion-echo-reg) is created
+# imperatively, out of git:
+#   TOKEN=$(gh api -X POST repos/fulviodenza/notion-echo/actions/runners/registration-token --jq .token)
+#   kubectl -n ci create secret generic github-runner-notion-echo-reg --from-literal=token="$TOKEN"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: github-runner-notion-echo-state
+  namespace: ci
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: github-runner-notion-echo
+  namespace: ci
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: github-runner-notion-echo
+  namespace: ci
+  labels:
+    app: github-runner-notion-echo
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: github-runner-notion-echo
+  template:
+    metadata:
+      labels:
+        app: github-runner-notion-echo
+    spec:
+      serviceAccountName: github-runner-notion-echo
+      containers:
+        - name: runner
+          image: ghcr.io/actions/actions-runner:latest
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              set -e
+              cd /home/runner
+              # First boot: register with the one-time token; later boots
+              # reuse the persisted registration.
+              if [ ! -f state/.runner ]; then
+                ./config.sh --unattended \
+                  --url https://github.com/fulviodenza/notion-echo \
+                  --token "${RUNNER_REG_TOKEN}" \
+                  --name k3s-home-notion-echo \
+                  --labels self-hosted,home \
+                  --replace
+                cp -a .runner .credentials .credentials_rsaparams state/ 2>/dev/null || true
+              else
+                cp -a state/.runner state/.credentials state/.credentials_rsaparams . 2>/dev/null || true
+              fi
+              exec ./run.sh
+          env:
+            - name: RUNNER_REG_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: github-runner-notion-echo-reg
+                  key: token
+                  optional: true
+            - name: DOCKER_HOST
+              value: tcp://localhost:2375
+          resources:
+            limits:
+              memory: 6Gi
+            requests:
+              cpu: 20m
+              memory: 256Mi
+          volumeMounts:
+            - mountPath: /home/runner/state
+              name: state
+        - name: dind
+          image: docker:27-dind
+          args:
+            - "--host=tcp://0.0.0.0:2375"
+            - "--insecure-registry=registry.fulvio.dev"
+          env:
+            - name: DOCKER_TLS_CERTDIR
+              value: ""
+          securityContext:
+            privileged: true
+          resources:
+            limits:
+              memory: 6Gi
+            requests:
+              cpu: 100m
+              memory: 1Gi
+      volumes:
+        - name: state
+          persistentVolumeClaim:
+            claimName: github-runner-notion-echo-state
