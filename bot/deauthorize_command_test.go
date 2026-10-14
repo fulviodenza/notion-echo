@@ -5,13 +5,13 @@ import (
 	"sort"
 	"testing"
 
-	tgbotapi "github.com/OvyFlash/telegram-bot-api"
 	"github.com/google/go-cmp/cmp"
+	"github.com/mymmrac/telego"
 )
 
 func TestDeauthorizeCommandExecute(t *testing.T) {
 	type fields struct {
-		update *tgbotapi.Update
+		update *telego.Update
 		bot    *MockBot
 	}
 	tests := []struct {

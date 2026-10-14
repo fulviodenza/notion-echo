@@ -3,8 +3,8 @@ package bot
 import (
 	"context"
 
-	tgbotapi "github.com/OvyFlash/telegram-bot-api"
 	"github.com/jomei/notionapi"
+	"github.com/mymmrac/telego"
 	"github.com/notion-echo/adapters/db"
 	"github.com/notion-echo/adapters/ent"
 	"github.com/notion-echo/adapters/r2"
@@ -44,11 +44,11 @@ func (b *MockBot) GetHelpMessage() string {
 	return "help message"
 }
 
-func (b *MockBot) SetTelegramClient(bot *tgbotapi.BotAPI) {}
+func (b *MockBot) SetTelegramClient(bot *telego.Bot) {}
 
 func (b *MockBot) SetR2Client(bot r2.R2Interface) {}
 
-func (b *MockBot) GetTelegramClient() *tgbotapi.BotAPI {
+func (b *MockBot) GetTelegramClient() *telego.Bot {
 	return nil
 }
 
@@ -64,10 +64,10 @@ func (b *MockBot) SendButtonWithURL(chatId int64, buttonText, url, msgTxt string
 }
 
 var (
-	update = func(opts ...func(*tgbotapi.Update)) *tgbotapi.Update {
-		update := &tgbotapi.Update{
-			Message: &tgbotapi.Message{
-				Chat: tgbotapi.Chat{
+	update = func(opts ...func(*telego.Update)) *telego.Update {
+		update := &telego.Update{
+			Message: &telego.Message{
+				Chat: telego.Chat{
 					ID: 1,
 				},
 			},
@@ -78,13 +78,13 @@ var (
 
 		return update
 	}
-	withMessage = func(msg string) func(*tgbotapi.Update) {
-		return func(up *tgbotapi.Update) {
+	withMessage = func(msg string) func(*telego.Update) {
+		return func(up *telego.Update) {
 			up.Message.Text = msg
 		}
 	}
-	withId = func(id int) func(*tgbotapi.Update) {
-		return func(up *tgbotapi.Update) {
+	withId = func(id int) func(*telego.Update) {
+		return func(up *telego.Update) {
 			up.Message.Chat.ID = int64(id)
 		}
 	}

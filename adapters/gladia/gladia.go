@@ -10,22 +10,20 @@ import (
 	"path/filepath"
 	"time"
 
-	tgbotapi "github.com/OvyFlash/telegram-bot-api"
 	gladiaclient "github.com/fulviodenza/go-gladia-client/pkg/gladia"
+	"github.com/mymmrac/telego"
 )
 
-func HandleTranscribe(ctx context.Context, bot *tgbotapi.BotAPI, voice *tgbotapi.Voice) (string, error) {
-	fileConfig := tgbotapi.FileConfig{
+func HandleTranscribe(ctx context.Context, bot *telego.Bot, voice *telego.Voice) (string, error) {
+	file, err := bot.GetFile(ctx, &telego.GetFileParams{
 		FileID: voice.FileID,
-	}
-
-	file, err := bot.GetFile(fileConfig)
+	})
 	if err != nil {
 		log.Printf("Failed to get file: %v", err)
 		return "", err
 	}
 
-	fileURL := file.Link(bot.Token)
+	fileURL := bot.FileDownloadURL(file.FilePath)
 	tempDir := os.TempDir()
 	tempFile := filepath.Join(tempDir, "voice_"+voice.FileID+".ogg")
 

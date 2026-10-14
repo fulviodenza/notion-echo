@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	tgbotapi "github.com/OvyFlash/telegram-bot-api"
+	"github.com/mymmrac/telego"
 	"github.com/notion-echo/adapters/db"
 	"github.com/notion-echo/adapters/notion"
 	"github.com/notion-echo/bot/types"
@@ -31,7 +31,7 @@ func NewListDatabasesCommand(bot types.IBot, buildNotionClient func(ctx context.
 	return hc.Execute
 }
 
-func (lc *ListDatabasesCommand) Execute(ctx context.Context, update *tgbotapi.Update) {
+func (lc *ListDatabasesCommand) Execute(ctx context.Context, update *telego.Update) {
 	if lc == nil || lc.IBot == nil {
 		return
 	}

@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"os"
 
-	tgbotapi "github.com/OvyFlash/telegram-bot-api"
+	"github.com/mymmrac/telego"
 	"github.com/notion-echo/bot/types"
 	"github.com/notion-echo/errors"
 	"github.com/notion-echo/metrics"
@@ -29,7 +29,7 @@ func NewRegisterCommand(bot types.IBot, generateStateToken func() (string, error
 	return hc.Execute
 }
 
-func (rc *RegisterCommand) Execute(ctx context.Context, update *tgbotapi.Update) {
+func (rc *RegisterCommand) Execute(ctx context.Context, update *telego.Update) {
 	id := int(update.Message.Chat.ID)
 	rc.Logger().Infof("[RegisterCommand] got registration request from %d", id)
 

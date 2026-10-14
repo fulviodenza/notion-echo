@@ -6,8 +6,8 @@ import (
 	"sort"
 	"testing"
 
-	tgbotapi "github.com/OvyFlash/telegram-bot-api"
 	"github.com/google/go-cmp/cmp"
+	"github.com/mymmrac/telego"
 	"github.com/notion-echo/adapters/db"
 	"github.com/notion-echo/adapters/ent"
 	notionerrors "github.com/notion-echo/errors"
@@ -15,7 +15,7 @@ import (
 
 func TestGetDefaultPageCommandExecute(t *testing.T) {
 	type fields struct {
-		update *tgbotapi.Update
+		update *telego.Update
 		bot    *MockBot
 	}
 	tests := []struct {
