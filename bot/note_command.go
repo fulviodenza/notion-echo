@@ -335,7 +335,7 @@ func buildImageBlockWithFileUpload(fileID string) *ImageBlockWithFileUpload {
 func buildCalloutBlock(text string, children []notionapi.Block) *notionapi.CalloutBlock {
 	callout := &notionapi.CalloutBlock{
 		BasicBlock: notionapi.BasicBlock{
-			Type:   notionapi.BlockCallout,
+			Type:   notionapi.BlockTypeCallout,
 			Object: "block",
 		},
 		Callout: notionapi.Callout{
