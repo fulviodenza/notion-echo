@@ -1,6 +1,6 @@
 module github.com/notion-echo
 
-go 1.24
+go 1.27
 
 require (
 	github.com/OvyFlash/telegram-bot-api v0.0.0-20241219171906-3f2ca0c14ada
