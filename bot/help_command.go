@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	tgbotapi "github.com/OvyFlash/telegram-bot-api"
+	"github.com/mymmrac/telego"
 	"github.com/notion-echo/bot/types"
 	"github.com/notion-echo/metrics"
 	"github.com/prometheus/client_golang/prometheus"
@@ -24,7 +24,7 @@ func NewHelpCommand(bot types.IBot) types.Command {
 	return hc.Execute
 }
 
-func (hc *HelpCommand) Execute(ctx context.Context, update *tgbotapi.Update) {
+func (hc *HelpCommand) Execute(ctx context.Context, update *telego.Update) {
 	if hc == nil || hc.IBot == nil {
 		return
 	}

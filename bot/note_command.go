@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"path/filepath"
 	"strings"
 
-	tgbotapi "github.com/OvyFlash/telegram-bot-api"
 	"github.com/jomei/notionapi"
+	"github.com/mymmrac/telego"
 	"github.com/notion-echo/adapters/db"
 	"github.com/notion-echo/adapters/ent"
 	"github.com/notion-echo/adapters/notion"
@@ -80,7 +79,7 @@ func NewNoteCommand(bot types.IBot, buildNotionClient func(ctx context.Context, 
 	return hc.Execute
 }
 
-func (cc *NoteCommand) Execute(ctx context.Context, update *tgbotapi.Update) {
+func (cc *NoteCommand) Execute(ctx context.Context, update *telego.Update) {
 	if cc == nil || cc.IBot == nil {
 		return
 	}
@@ -187,15 +186,16 @@ func (cc *NoteCommand) Execute(ctx context.Context, update *tgbotapi.Update) {
 	cc.SendMessage(fmt.Sprintf("%s on %s page", NOTE_SAVED, notion.ExtractName(page.Properties)), id, false, false)
 }
 
-func downloadAndUploadDocument(ctx context.Context, bot types.IBot, ps *tgbotapi.Document, buildNotionClient func(ctx context.Context, userRepo db.UserRepoInterface, id int, token string) (notion.NotionInterface, error), userRepo db.UserRepoInterface, userID int) (string, error) {
-	file, err := bot.GetTelegramClient().GetFile(tgbotapi.FileConfig{
+func downloadAndUploadDocument(ctx context.Context, bot types.IBot, ps *telego.Document, buildNotionClient func(ctx context.Context, userRepo db.UserRepoInterface, id int, token string) (notion.NotionInterface, error), userRepo db.UserRepoInterface, userID int) (string, error) {
+	tg := bot.GetTelegramClient()
+	file, err := tg.GetFile(ctx, &telego.GetFileParams{
 		FileID: ps.FileID,
 	})
 	if err != nil {
 		return "", err
 	}
 
-	fileURL := fmt.Sprintf("https://api.telegram.org/file/bot%s/%s", os.Getenv("TELEGRAM_TOKEN"), file.FilePath)
+	fileURL := tg.FileDownloadURL(file.FilePath)
 	resp, err := http.Get(fileURL)
 	if err != nil {
 		return "", err
@@ -230,15 +230,16 @@ func downloadAndUploadDocument(ctx context.Context, bot types.IBot, ps *tgbotapi
 	return uploadResp.ID, nil
 }
 
-func downloadAndUploadImage(ctx context.Context, bot types.IBot, ps tgbotapi.PhotoSize, buildNotionClient func(ctx context.Context, userRepo db.UserRepoInterface, id int, token string) (notion.NotionInterface, error), userRepo db.UserRepoInterface, userID int) (string, error) {
-	file, err := bot.GetTelegramClient().GetFile(tgbotapi.FileConfig{
+func downloadAndUploadImage(ctx context.Context, bot types.IBot, ps telego.PhotoSize, buildNotionClient func(ctx context.Context, userRepo db.UserRepoInterface, id int, token string) (notion.NotionInterface, error), userRepo db.UserRepoInterface, userID int) (string, error) {
+	tg := bot.GetTelegramClient()
+	file, err := tg.GetFile(ctx, &telego.GetFileParams{
 		FileID: ps.FileID,
 	})
 	if err != nil {
 		return "", err
 	}
 
-	fileURL := fmt.Sprintf("https://api.telegram.org/file/bot%s/%s", os.Getenv("TELEGRAM_TOKEN"), file.FilePath)
+	fileURL := tg.FileDownloadURL(file.FilePath)
 	resp, err := http.Get(fileURL)
 	if err != nil {
 		return "", err
@@ -269,7 +270,7 @@ func downloadAndUploadImage(ctx context.Context, bot types.IBot, ps tgbotapi.Pho
 	return uploadResp.ID, nil
 }
 
-func buildBlockWithUploadedFile(fileID string, document *tgbotapi.Document, photo []tgbotapi.PhotoSize) (b notionapi.Block) {
+func buildBlockWithUploadedFile(fileID string, document *telego.Document, photo []telego.PhotoSize) (b notionapi.Block) {
 	if document != nil {
 		ext := utils.GetExt(document.FileName)
 		switch ext {
@@ -354,8 +355,8 @@ func buildCalloutBlock(text string, children []notionapi.Block) *notionapi.Callo
 	return callout
 }
 
-func getLargestPhotoSize(photoSizes []tgbotapi.PhotoSize) tgbotapi.PhotoSize {
-	var largestPhoto tgbotapi.PhotoSize
+func getLargestPhotoSize(photoSizes []telego.PhotoSize) telego.PhotoSize {
+	var largestPhoto telego.PhotoSize
 	var maxSize int
 
 	for _, size := range photoSizes {

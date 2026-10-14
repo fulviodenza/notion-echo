@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	tgbotapi "github.com/OvyFlash/telegram-bot-api"
 	"github.com/jomei/notionapi"
+	"github.com/mymmrac/telego"
 	"github.com/notion-echo/adapters/db"
 	"github.com/notion-echo/adapters/notion"
 	"github.com/notion-echo/bot/types"
@@ -36,7 +36,7 @@ type DbNoteCommand struct {
 	now               func() time.Time
 	// uploadAttachment downloads the message's photo/document from Telegram and
 	// uploads it to Notion, returning the file upload ID. Swappable in tests.
-	uploadAttachment func(ctx context.Context, msg *tgbotapi.Message, userID int) (string, error)
+	uploadAttachment func(ctx context.Context, msg *telego.Message, userID int) (string, error)
 }
 
 func NewDbNoteCommand(bot types.IBot, buildNotionClient func(ctx context.Context, userRepo db.UserRepoInterface, id int, token string) (notion.NotionInterface, error)) types.Command {
@@ -58,7 +58,7 @@ type dbNoteRequest struct {
 	today  bool
 }
 
-func (dc *DbNoteCommand) Execute(ctx context.Context, update *tgbotapi.Update) {
+func (dc *DbNoteCommand) Execute(ctx context.Context, update *telego.Update) {
 	if dc == nil || dc.IBot == nil {
 		return
 	}
@@ -214,13 +214,13 @@ func (dc *DbNoteCommand) buildProperties(database *notionapi.Database, req dbNot
 	return props, warnings, nil
 }
 
-func messageHasAttachment(msg *tgbotapi.Message) bool {
+func messageHasAttachment(msg *telego.Message) bool {
 	return (msg.Document != nil && msg.Document.FileID != "") || len(msg.Photo) > 0
 }
 
 // attachmentTitle is the name shown for the uploaded file, also used as the
 // entry title when the caption only names the database.
-func attachmentTitle(msg *tgbotapi.Message) string {
+func attachmentTitle(msg *telego.Message) string {
 	if msg.Document != nil && msg.Document.FileName != "" {
 		return msg.Document.FileName
 	}
@@ -230,7 +230,7 @@ func attachmentTitle(msg *tgbotapi.Message) string {
 	return "photo"
 }
 
-func (dc *DbNoteCommand) downloadAndUploadAttachment(ctx context.Context, msg *tgbotapi.Message, userID int) (string, error) {
+func (dc *DbNoteCommand) downloadAndUploadAttachment(ctx context.Context, msg *telego.Message, userID int) (string, error) {
 	if msg.Document != nil && msg.Document.FileID != "" {
 		return downloadAndUploadDocument(ctx, dc.IBot, msg.Document, dc.buildNotionClient, dc.GetUserRepo(), userID)
 	}
@@ -240,7 +240,7 @@ func (dc *DbNoteCommand) downloadAndUploadAttachment(ctx context.Context, msg *t
 // attachFile puts the uploaded file in the database's "Files & media" property
 // when it has one, so it shows up in table/gallery views. Otherwise it falls
 // back to returning a block for the entry's page body.
-func attachFile(database *notionapi.Database, props notionapi.Properties, fileID, name string, msg *tgbotapi.Message) []notionapi.Block {
+func attachFile(database *notionapi.Database, props notionapi.Properties, fileID, name string, msg *telego.Message) []notionapi.Block {
 	if propName, ok := findPropByType(database, notionapi.PropertyConfigTypeFiles); ok {
 		props[propName] = FilesPropertyWithFileUpload{
 			Type: notionapi.PropertyTypeFiles,

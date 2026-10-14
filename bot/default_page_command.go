@@ -3,7 +3,7 @@ package bot
 import (
 	"context"
 
-	tgbotapi "github.com/OvyFlash/telegram-bot-api"
+	"github.com/mymmrac/telego"
 	"github.com/notion-echo/adapters/db"
 	"github.com/notion-echo/adapters/notion"
 	"github.com/notion-echo/bot/types"
@@ -26,7 +26,7 @@ func NewDefaultPageCommand(bot types.IBot, buildNotionClient func(ctx context.Co
 	return hc.Execute
 }
 
-func (dc *DefaultPageCommand) Execute(ctx context.Context, update *tgbotapi.Update) {
+func (dc *DefaultPageCommand) Execute(ctx context.Context, update *telego.Update) {
 	if dc == nil || dc.IBot == nil {
 		return
 	}

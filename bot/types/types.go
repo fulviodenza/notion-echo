@@ -8,13 +8,13 @@ import (
 	"github.com/notion-echo/adapters/r2"
 	"github.com/sirupsen/logrus"
 
-	tgbotapi "github.com/OvyFlash/telegram-bot-api"
+	"github.com/mymmrac/telego"
 )
 
-type Command func(ctx context.Context, update *tgbotapi.Update)
+type Command func(ctx context.Context, update *telego.Update)
 
 type ICommand interface {
-	Execute(ctx context.Context, update *tgbotapi.Update)
+	Execute(ctx context.Context, update *telego.Update)
 }
 
 // Getters and Setters methods Bot instances
@@ -24,9 +24,9 @@ type IBot interface {
 	SendButtonWithURL(chatId int64, buttonText, url, msgTxt string) error
 	SendButtonWithData(chatId int64, buttonText string, pages []*notionapi.Page) error
 	GetHelpMessage() string
-	SetTelegramClient(bot *tgbotapi.BotAPI)
+	SetTelegramClient(bot *telego.Bot)
 	SetR2Client(r2 r2.R2Interface)
-	GetTelegramClient() *tgbotapi.BotAPI
+	GetTelegramClient() *telego.Bot
 	SetNotionUser(token string)
 	SetNotionClient(token string, notionToken string)
 	GetNotionClient(userId string) string

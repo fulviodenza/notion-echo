@@ -24,7 +24,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 
-	tgbotapi "github.com/OvyFlash/telegram-bot-api"
+	"github.com/mymmrac/telego"
+	tu "github.com/mymmrac/telego/telegoutil"
 
 	"github.com/labstack/echo/v5"
 	"github.com/labstack/echo/v5/middleware"
@@ -32,7 +33,7 @@ import (
 
 type Bot struct {
 	sync.RWMutex
-	TelegramClient *tgbotapi.BotAPI
+	TelegramClient *telego.Bot
 	NotionClient   map[string]string
 	UserRepo       db.UserRepoInterface
 	R2Client       r2.R2Interface
@@ -76,7 +77,7 @@ func NewBotWithConfig() (*Bot, error) {
 	bot.SetUserRepo(userRepo)
 	bot.loadHelpMessage()
 
-	b, err := tgbotapi.NewBotAPI(telegramToken)
+	b, err := telego.NewBot(telegramToken, telego.WithDefaultLogger(false, true))
 	if err != nil {
 		return nil, err
 	}
@@ -105,44 +106,24 @@ func (b *Bot) scheduleDailyLogUpload(logFileName string, uploadFunc func(logFile
 }
 
 func (b *Bot) Start(ctx context.Context) {
-	updateConfig := tgbotapi.NewUpdate(0)
-	updateConfig.Timeout = 60
-
-	updateConfig.AllowedUpdates = []string{
-		tgbotapi.UpdateTypeMessage,
-		tgbotapi.UpdateTypeEditedMessage,
-		tgbotapi.UpdateTypeChannelPost,
-		tgbotapi.UpdateTypeEditedChannelPost,
-		tgbotapi.UpdateTypeBusinessConnection,
-		tgbotapi.UpdateTypeBusinessMessage,
-		tgbotapi.UpdateTypeEditedBusinessMessage,
-		tgbotapi.UpdateTypeDeletedBusinessMessages,
-		tgbotapi.UpdateTypeMessageReaction,
-		tgbotapi.UpdateTypeMessageReactionCount,
-		tgbotapi.UpdateTypeInlineQuery,
-		tgbotapi.UpdateTypeChosenInlineResult,
-		tgbotapi.UpdateTypeCallbackQuery,
-		tgbotapi.UpdateTypeShippingQuery,
-		tgbotapi.UpdateTypePreCheckoutQuery,
-		tgbotapi.UpdateTypePurchasedPaidMedia,
-		tgbotapi.UpdateTypePoll,
-		tgbotapi.UpdateTypePollAnswer,
-		tgbotapi.UpdateTypeMyChatMember,
-		tgbotapi.UpdateTypeChatMember,
-		tgbotapi.UpdateTypeChatJoinRequest,
-		tgbotapi.UpdateTypeChatBoost,
-		tgbotapi.UpdateTypeRemovedChatBoost,
+	// Skip whatever piled up while the bot was down.
+	if err := b.TelegramClient.DeleteWebhook(ctx, &telego.DeleteWebhookParams{DropPendingUpdates: true}); err != nil {
+		b.Logger().WithFields(logrus.Fields{"error": err}).Error("failed to drop pending updates")
 	}
 
-	updatesChannel := b.TelegramClient.GetUpdatesChan(updateConfig)
-	time.Sleep(time.Millisecond * 500)
-	updatesChannel.Clear()
+	updatesChannel, err := b.TelegramClient.UpdatesViaLongPolling(ctx, &telego.GetUpdatesParams{
+		Timeout:        60,
+		AllowedUpdates: []string{"message", "callback_query"},
+	})
+	if err != nil {
+		b.Logger().WithFields(logrus.Fields{"error": err}).Fatal("failed to start long polling")
+	}
 
 	b.Logger().Info("Bot started and waiting for updates...")
 
 	for update := range updatesChannel {
 		b.Logger().Info("Received an update")
-		if update.CallbackQuery != nil {
+		if update.CallbackQuery != nil && update.CallbackQuery.Message != nil {
 			if strings.HasPrefix(update.CallbackQuery.Data, "setpage:") {
 				parts := strings.Split(update.CallbackQuery.Data, ":")
 				if len(parts) != 2 {
@@ -151,7 +132,7 @@ func (b *Bot) Start(ctx context.Context) {
 				}
 
 				pageName := parts[1]
-				chatID := update.CallbackQuery.Message.Chat.ID
+				chatID := update.CallbackQuery.Message.GetChat().ID
 
 				err := b.GetUserRepo().SetDefaultPage(ctx, int(chatID), pageName)
 				if err != nil {
@@ -167,8 +148,7 @@ func (b *Bot) Start(ctx context.Context) {
 
 				b.SendMessage(fmt.Sprintf("Default page set to: %s", pageName), int(chatID), false, true)
 
-				callback := tgbotapi.NewCallback(update.CallbackQuery.ID, "Default page updated")
-				b.TelegramClient.Send(callback)
+				b.TelegramClient.AnswerCallbackQuery(ctx, tu.CallbackQuery(update.CallbackQuery.ID).WithText("Default page updated"))
 			}
 		}
 
@@ -324,15 +304,11 @@ func (b *Bot) GetNotionClient(userId string) string {
 }
 
 func (b *Bot) SendButtonWithURL(chatId int64, buttonText, url, msgTxt string) error {
-	inlineKeyboardButton := tgbotapi.NewInlineKeyboardButtonURL(buttonText, url)
-	inlineKeyboardMarkup := tgbotapi.NewInlineKeyboardMarkup(
-		tgbotapi.NewInlineKeyboardRow(inlineKeyboardButton),
-	)
+	msg := tu.Message(tu.ID(chatId), msgTxt).WithReplyMarkup(tu.InlineKeyboard(
+		tu.InlineKeyboardRow(tu.InlineKeyboardButton(buttonText).WithURL(url)),
+	))
 
-	msg := tgbotapi.NewMessage(chatId, msgTxt)
-	msg.ReplyMarkup = inlineKeyboardMarkup
-
-	_, err := b.TelegramClient.Send(msg)
+	_, err := b.TelegramClient.SendMessage(context.Background(), msg)
 	if err != nil {
 		b.Logger().WithFields(logrus.Fields{"error": err}).Error("failed to send message with button")
 		return err
@@ -341,7 +317,7 @@ func (b *Bot) SendButtonWithURL(chatId int64, buttonText, url, msgTxt string) er
 }
 
 func (b *Bot) SendButtonWithData(chatId int64, buttonText string, pages []*notionapi.Page) error {
-	var rows [][]tgbotapi.InlineKeyboardButton
+	var rows [][]telego.InlineKeyboardButton
 	for _, page := range pages {
 		title := notion.ExtractName(page.Properties)
 		if title == "" {
@@ -357,20 +333,16 @@ func (b *Bot) SendButtonWithData(chatId int64, buttonText string, pages []*notio
 			continue
 		}
 
-		button := tgbotapi.NewInlineKeyboardButtonData(title, callbackData)
-		row := []tgbotapi.InlineKeyboardButton{button}
-		rows = append(rows, row)
+		rows = append(rows, tu.InlineKeyboardRow(tu.InlineKeyboardButton(title).WithCallbackData(callbackData)))
 	}
 
 	if len(rows) == 0 {
 		return fmt.Errorf("no valid pages to display")
 	}
 
-	inlineKeyboardMarkup := tgbotapi.NewInlineKeyboardMarkup(rows...)
-	msg := tgbotapi.NewMessage(chatId, buttonText)
-	msg.ReplyMarkup = inlineKeyboardMarkup
+	msg := tu.Message(tu.ID(chatId), buttonText).WithReplyMarkup(tu.InlineKeyboard(rows...))
 
-	_, err := b.TelegramClient.Send(msg)
+	_, err := b.TelegramClient.SendMessage(context.Background(), msg)
 	return err
 }
 
@@ -378,14 +350,14 @@ func (b *Bot) SendMessage(msg string, chatId int, formatMarkdown bool, escape bo
 	if len(msg) >= utils.MAX_LEN_MESSAGE {
 		msgs := utils.SplitString(msg)
 		for _, m := range msgs {
-			_, err := b.TelegramClient.Send(tgbotapi.NewMessage(int64(chatId), m))
+			_, err := b.TelegramClient.SendMessage(context.Background(), tu.Message(tu.ID(int64(chatId)), m))
 			if err != nil {
 				b.Logger().WithFields(logrus.Fields{"error": err}).Error("failed to send message")
 				return err
 			}
 		}
 	} else {
-		_, err := b.TelegramClient.Send(tgbotapi.NewMessage(int64(chatId), msg))
+		_, err := b.TelegramClient.SendMessage(context.Background(), tu.Message(tu.ID(int64(chatId)), msg))
 		if err != nil {
 			b.Logger().WithFields(logrus.Fields{"error": err}).Error("failed to send message")
 			return err
@@ -398,10 +370,10 @@ func (b *Bot) loadHelpMessage() {
 	b.helpMessage = utils.HELP_STRING
 }
 
-func (b *Bot) SetTelegramClient(bot *tgbotapi.BotAPI) {
+func (b *Bot) SetTelegramClient(bot *telego.Bot) {
 	b.TelegramClient = bot
 }
-func (b *Bot) GetTelegramClient() *tgbotapi.BotAPI {
+func (b *Bot) GetTelegramClient() *telego.Bot {
 	return b.TelegramClient
 }
 func (b *Bot) SetR2Client(bot r2.R2Interface) {
@@ -426,26 +398,25 @@ func (b *Bot) Logger() *logrus.Logger {
 	return b.logger
 }
 
-func (b *Bot) initializeHandlers() map[string]func(ctx context.Context, update *tgbotapi.Update) {
-	return map[string]func(ctx context.Context, update *tgbotapi.Update){
-		"/start": func(ctx context.Context, update *tgbotapi.Update) {
-			kb := tgbotapi.NewReplyKeyboard(
-				tgbotapi.NewKeyboardButtonRow(
-					tgbotapi.NewKeyboardButton("/note"),
-					tgbotapi.NewKeyboardButton("/register"),
+func (b *Bot) initializeHandlers() map[string]func(ctx context.Context, update *telego.Update) {
+	return map[string]func(ctx context.Context, update *telego.Update){
+		"/start": func(ctx context.Context, update *telego.Update) {
+			kb := tu.Keyboard(
+				tu.KeyboardRow(
+					tu.KeyboardButton("/note"),
+					tu.KeyboardButton("/register"),
 				),
-				tgbotapi.NewKeyboardButtonRow(
-					tgbotapi.NewKeyboardButton("/defaultpage"),
-					tgbotapi.NewKeyboardButton("/getdefaultpage"),
+				tu.KeyboardRow(
+					tu.KeyboardButton("/defaultpage"),
+					tu.KeyboardButton("/getdefaultpage"),
 				),
-				tgbotapi.NewKeyboardButtonRow(
-					tgbotapi.NewKeyboardButton("/help"),
+				tu.KeyboardRow(
+					tu.KeyboardButton("/help"),
 				),
 			)
 
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Welcome to notion-echo bot!")
-			msg.ReplyMarkup = kb
-			_, err := b.TelegramClient.Send(msg)
+			msg := tu.Message(tu.ID(update.Message.Chat.ID), "Welcome to notion-echo bot!").WithReplyMarkup(kb)
+			_, err := b.TelegramClient.SendMessage(ctx, msg)
 			if err != nil {
 				log.Println(err)
 			}

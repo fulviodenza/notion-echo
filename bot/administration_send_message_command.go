@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	tgbotapi "github.com/OvyFlash/telegram-bot-api"
+	"github.com/mymmrac/telego"
 	"github.com/notion-echo/bot/types"
 	"github.com/notion-echo/errors"
 	"github.com/sirupsen/logrus"
@@ -25,7 +25,7 @@ func NewSendAllCommand(bot types.IBot) types.Command {
 	return hc.Execute
 }
 
-func (sa *SendAllCommand) Execute(ctx context.Context, update *tgbotapi.Update) {
+func (sa *SendAllCommand) Execute(ctx context.Context, update *telego.Update) {
 	if sa == nil || sa.IBot == nil {
 		return
 	}

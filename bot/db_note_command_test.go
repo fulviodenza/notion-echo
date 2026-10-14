@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	tgbotapi "github.com/OvyFlash/telegram-bot-api"
 	"github.com/jomei/notionapi"
+	"github.com/mymmrac/telego"
 	"github.com/notion-echo/adapters/db"
 	"github.com/notion-echo/adapters/ent"
 	"github.com/notion-echo/adapters/notion"
@@ -332,14 +332,14 @@ func TestDbNoteCommandAttachment(t *testing.T) {
 		d.Properties["Scan"] = notionapi.FilesPropertyConfig{Type: notionapi.PropertyConfigTypeFiles}
 		return d
 	}
-	photo := []tgbotapi.PhotoSize{{FileID: "small", FileSize: 10}, {FileID: "big", FileSize: 100}}
+	photo := []telego.PhotoSize{{FileID: "small", FileSize: 10}, {FileID: "big", FileSize: 100}}
 
 	tests := []struct {
 		name      string
 		caption   string
 		database  *notionapi.Database
-		document  *tgbotapi.Document
-		photo     []tgbotapi.PhotoSize
+		document  *telego.Document
+		photo     []telego.PhotoSize
 		uploadErr error
 		want      []string
 		wantTitle string
@@ -369,7 +369,7 @@ func TestDbNoteCommandAttachment(t *testing.T) {
 			name:          "pdf falls back to a pdf block and titles the entry after the file",
 			caption:       `/dbnote "Expenses"`,
 			database:      namedDB("db-exp", "Expenses"),
-			document:      &tgbotapi.Document{FileID: "doc", FileName: "invoice.pdf"},
+			document:      &telego.Document{FileID: "doc", FileName: "invoice.pdf"},
 			want:          []string{"uploading your file to Notion...", "entry added to Expenses"},
 			wantTitle:     "invoice.pdf",
 			wantBlockType: notionapi.BlockTypePdf,
@@ -389,14 +389,14 @@ func TestDbNoteCommandAttachment(t *testing.T) {
 			mock := notion.NewNotionMockWithDatabases(nil, map[string]*notionapi.Database{"db": tt.database}, nil)
 			b := bot(withUserRepo(db.NewUserRepoMock(map[int]*ent.User{1: {ID: 1}}, nil)))
 
-			var uploaded *tgbotapi.Message
+			var uploaded *telego.Message
 			cmd := &DbNoteCommand{
 				IBot: b,
 				buildNotionClient: func(ctx context.Context, userRepo db.UserRepoInterface, id int, token string) (notion.NotionInterface, error) {
 					return mock, nil
 				},
 				now: time.Now,
-				uploadAttachment: func(ctx context.Context, msg *tgbotapi.Message, userID int) (string, error) {
+				uploadAttachment: func(ctx context.Context, msg *telego.Message, userID int) (string, error) {
 					uploaded = msg
 					return "upload-1", tt.uploadErr
 				},
