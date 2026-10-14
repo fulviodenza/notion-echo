@@ -34,6 +34,9 @@ type DbNoteCommand struct {
 	types.IBot
 	buildNotionClient func(ctx context.Context, userRepo db.UserRepoInterface, id int, token string) (notion.NotionInterface, error)
 	now               func() time.Time
+	// uploadAttachment downloads the message's photo/document from Telegram and
+	// uploads it to Notion, returning the file upload ID. Swappable in tests.
+	uploadAttachment func(ctx context.Context, msg *tgbotapi.Message, userID int) (string, error)
 }
 
 func NewDbNoteCommand(bot types.IBot, buildNotionClient func(ctx context.Context, userRepo db.UserRepoInterface, id int, token string) (notion.NotionInterface, error)) types.Command {
@@ -42,6 +45,7 @@ func NewDbNoteCommand(bot types.IBot, buildNotionClient func(ctx context.Context
 		buildNotionClient: buildNotionClient,
 		now:               time.Now,
 	}
+	hc.uploadAttachment = hc.downloadAndUploadAttachment
 	return hc.Execute
 }
 
@@ -64,7 +68,14 @@ func (dc *DbNoteCommand) Execute(ctx context.Context, update *tgbotapi.Update) {
 
 	metrics.DbNoteCount.With(prometheus.Labels{"id": fmt.Sprint(id)}).Inc()
 
-	req, err := parseDbNoteMessage(update.Message.Text)
+	// photos and documents carry the command in their caption
+	messageText := update.Message.Text
+	if messageText == "" {
+		messageText = update.Message.Caption
+	}
+	hasAttachment := messageHasAttachment(update.Message)
+
+	req, err := parseDbNoteMessage(messageText)
 	if err != nil {
 		dc.SendMessage("Make sure you have enclosed the database name in quotes, e.g. /dbnote \"Finance\" coffee 3.50", id, false, true)
 		return
@@ -72,6 +83,9 @@ func (dc *DbNoteCommand) Execute(ctx context.Context, update *tgbotapi.Update) {
 	if req.dbName == "" {
 		dc.SendMessage("No database name specified.", id, false, true)
 		return
+	}
+	if req.title == "" && hasAttachment {
+		req.title = attachmentTitle(update.Message)
 	}
 	if req.title == "" {
 		dc.SendMessage("Please provide the text for the new entry, e.g. /dbnote \"Finance\" coffee 3.50", id, false, true)
@@ -119,12 +133,25 @@ func (dc *DbNoteCommand) Execute(ctx context.Context, update *tgbotapi.Update) {
 		return
 	}
 
+	var children []notionapi.Block
+	if hasAttachment {
+		dc.SendMessage("uploading your file to Notion...", id, false, true)
+		fileID, uerr := dc.uploadAttachment(ctx, update.Message, id)
+		if uerr != nil {
+			dc.Logger().WithFields(logrus.Fields{"error": uerr}).Error("dbnote error")
+			dc.SendMessage("file error", id, false, true)
+			return
+		}
+		children = attachFile(database, props, fileID, attachmentTitle(update.Message), update.Message)
+	}
+
 	_, err = notionClient.CreatePage(ctx, &notionapi.PageCreateRequest{
 		Parent: notionapi.Parent{
 			Type:       notionapi.ParentTypeDatabaseID,
 			DatabaseID: notionapi.DatabaseID(database.ID),
 		},
 		Properties: props,
+		Children:   children,
 	})
 	if err != nil {
 		dc.Logger().WithFields(logrus.Fields{"error": err}).Error("dbnote error")
@@ -185,6 +212,63 @@ func (dc *DbNoteCommand) buildProperties(database *notionapi.Database, req dbNot
 	}
 
 	return props, warnings, nil
+}
+
+func messageHasAttachment(msg *tgbotapi.Message) bool {
+	return (msg.Document != nil && msg.Document.FileID != "") || len(msg.Photo) > 0
+}
+
+// attachmentTitle is the name shown for the uploaded file, also used as the
+// entry title when the caption only names the database.
+func attachmentTitle(msg *tgbotapi.Message) string {
+	if msg.Document != nil && msg.Document.FileName != "" {
+		return msg.Document.FileName
+	}
+	if msg.Document != nil {
+		return "file"
+	}
+	return "photo"
+}
+
+func (dc *DbNoteCommand) downloadAndUploadAttachment(ctx context.Context, msg *tgbotapi.Message, userID int) (string, error) {
+	if msg.Document != nil && msg.Document.FileID != "" {
+		return downloadAndUploadDocument(ctx, dc.IBot, msg.Document, dc.buildNotionClient, dc.GetUserRepo(), userID)
+	}
+	return downloadAndUploadImage(ctx, dc.IBot, getLargestPhotoSize(msg.Photo), dc.buildNotionClient, dc.GetUserRepo(), userID)
+}
+
+// attachFile puts the uploaded file in the database's "Files & media" property
+// when it has one, so it shows up in table/gallery views. Otherwise it falls
+// back to returning a block for the entry's page body.
+func attachFile(database *notionapi.Database, props notionapi.Properties, fileID, name string, msg *tgbotapi.Message) []notionapi.Block {
+	if propName, ok := findPropByType(database, notionapi.PropertyConfigTypeFiles); ok {
+		props[propName] = FilesPropertyWithFileUpload{
+			Type: notionapi.PropertyTypeFiles,
+			Files: []FileWithFileUpload{{
+				Name:       name,
+				Type:       "file_upload",
+				FileUpload: &FileUploadObject{ID: fileID},
+			}},
+		}
+		return nil
+	}
+	return []notionapi.Block{buildBlockWithUploadedFile(fileID, msg.Document, msg.Photo)}
+}
+
+// FilesPropertyWithFileUpload is a files property value referencing a Notion
+// file upload, which notionapi.FilesProperty can't express.
+type FilesPropertyWithFileUpload struct {
+	Type  notionapi.PropertyType `json:"type,omitempty"`
+	Files []FileWithFileUpload   `json:"files"`
+}
+
+func (p FilesPropertyWithFileUpload) GetID() string                   { return "" }
+func (p FilesPropertyWithFileUpload) GetType() notionapi.PropertyType { return p.Type }
+
+type FileWithFileUpload struct {
+	Name       string            `json:"name"`
+	Type       string            `json:"type"`
+	FileUpload *FileUploadObject `json:"file_upload"`
 }
 
 // selectDatabase picks the database the user actually named. Notion's search is

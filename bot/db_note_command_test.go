@@ -2,9 +2,11 @@ package bot
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
+	tgbotapi "github.com/OvyFlash/telegram-bot-api"
 	"github.com/jomei/notionapi"
 	"github.com/notion-echo/adapters/db"
 	"github.com/notion-echo/adapters/ent"
@@ -322,4 +324,131 @@ func propTitle(p notionapi.Property) string {
 		return ""
 	}
 	return tp.Title[0].Text.Content
+}
+
+func TestDbNoteCommandAttachment(t *testing.T) {
+	receiptsDB := func() *notionapi.Database {
+		d := namedDB("db-rec", "Receipts")
+		d.Properties["Scan"] = notionapi.FilesPropertyConfig{Type: notionapi.PropertyConfigTypeFiles}
+		return d
+	}
+	photo := []tgbotapi.PhotoSize{{FileID: "small", FileSize: 10}, {FileID: "big", FileSize: 100}}
+
+	tests := []struct {
+		name      string
+		caption   string
+		database  *notionapi.Database
+		document  *tgbotapi.Document
+		photo     []tgbotapi.PhotoSize
+		uploadErr error
+		want      []string
+		wantTitle string
+		// wantProp: file lands in the "Scan" files property; otherwise in a body block
+		wantProp      bool
+		wantBlockType notionapi.BlockType
+	}{
+		{
+			name:      "photo goes into the files property",
+			caption:   `/dbnote "Receipts" coffee`,
+			database:  receiptsDB(),
+			photo:     photo,
+			want:      []string{"uploading your file to Notion...", "entry added to Receipts"},
+			wantTitle: "coffee",
+			wantProp:  true,
+		},
+		{
+			name:          "photo falls back to an image block without a files property",
+			caption:       `/dbnote "Expenses" coffee`,
+			database:      namedDB("db-exp", "Expenses"),
+			photo:         photo,
+			want:          []string{"uploading your file to Notion...", "entry added to Expenses"},
+			wantTitle:     "coffee",
+			wantBlockType: notionapi.BlockTypeImage,
+		},
+		{
+			name:          "pdf falls back to a pdf block and titles the entry after the file",
+			caption:       `/dbnote "Expenses"`,
+			database:      namedDB("db-exp", "Expenses"),
+			document:      &tgbotapi.Document{FileID: "doc", FileName: "invoice.pdf"},
+			want:          []string{"uploading your file to Notion...", "entry added to Expenses"},
+			wantTitle:     "invoice.pdf",
+			wantBlockType: notionapi.BlockTypePdf,
+		},
+		{
+			name:      "upload failure creates no entry",
+			caption:   `/dbnote "Receipts" coffee`,
+			database:  receiptsDB(),
+			photo:     photo,
+			uploadErr: errors.New("telegram down"),
+			want:      []string{"uploading your file to Notion...", "file error"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mock := notion.NewNotionMockWithDatabases(nil, map[string]*notionapi.Database{"db": tt.database}, nil)
+			b := bot(withUserRepo(db.NewUserRepoMock(map[int]*ent.User{1: {ID: 1}}, nil)))
+
+			var uploaded *tgbotapi.Message
+			cmd := &DbNoteCommand{
+				IBot: b,
+				buildNotionClient: func(ctx context.Context, userRepo db.UserRepoInterface, id int, token string) (notion.NotionInterface, error) {
+					return mock, nil
+				},
+				now: time.Now,
+				uploadAttachment: func(ctx context.Context, msg *tgbotapi.Message, userID int) (string, error) {
+					uploaded = msg
+					return "upload-1", tt.uploadErr
+				},
+			}
+			up := update(withId(1))
+			up.Message.Caption = tt.caption
+			up.Message.Document = tt.document
+			up.Message.Photo = tt.photo
+			cmd.Execute(context.Background(), up)
+
+			if len(b.Resp) != len(tt.want) {
+				t.Fatalf("responses = %v, want %v", b.Resp, tt.want)
+			}
+			for i := range tt.want {
+				if b.Resp[i] != tt.want[i] {
+					t.Errorf("response[%d] = %q, want %q", i, b.Resp[i], tt.want[i])
+				}
+			}
+			if uploaded == nil {
+				t.Fatal("expected the attachment to be uploaded")
+			}
+
+			created := mock.CreatedPage()
+			if tt.wantTitle == "" {
+				if created != nil {
+					t.Fatal("expected no page to be created")
+				}
+				return
+			}
+			if created == nil {
+				t.Fatal("expected a page to be created")
+			}
+			if got := propTitle(created.Properties["Name"]); got != tt.wantTitle {
+				t.Errorf("title = %q, want %q", got, tt.wantTitle)
+			}
+
+			fp, hasProp := created.Properties["Scan"].(FilesPropertyWithFileUpload)
+			if hasProp != tt.wantProp {
+				t.Fatalf("files property set = %v, want %v", hasProp, tt.wantProp)
+			}
+			if tt.wantProp {
+				if len(fp.Files) != 1 || fp.Files[0].FileUpload.ID != "upload-1" || fp.Files[0].Type != "file_upload" {
+					t.Errorf("files property = %+v", fp)
+				}
+				if len(created.Children) != 0 {
+					t.Errorf("expected no body blocks, got %d", len(created.Children))
+				}
+				return
+			}
+			if len(created.Children) != 1 || created.Children[0].GetType() != tt.wantBlockType {
+				t.Fatalf("children = %+v, want one %s block", created.Children, tt.wantBlockType)
+			}
+		})
+	}
 }
