@@ -9,7 +9,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v5"
 )
 
 type OAuthAccessToken struct {
@@ -25,7 +25,7 @@ var (
 	REDIRECT_URL        = "REDIRECT_URL"
 )
 
-func Handler(c echo.Context) (string, error) {
+func Handler(c *echo.Context) (string, error) {
 	oauthClientSecret := os.Getenv(OAUTH_CLIENT_SECRET)
 	oauthClientId := os.Getenv(OAUTH_CLIENT_ID)
 	redirectUrl := os.Getenv(REDIRECT_URL)

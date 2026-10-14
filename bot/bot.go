@@ -26,8 +26,8 @@ import (
 
 	tgbotapi "github.com/OvyFlash/telegram-bot-api"
 
-	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
+	"github.com/labstack/echo/v5"
+	"github.com/labstack/echo/v5/middleware"
 )
 
 type Bot struct {
@@ -240,22 +240,30 @@ func (b *Bot) Start(ctx context.Context) {
 
 func (b *Bot) RunOauth2Endpoint() {
 	e := echo.New()
-	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
-		Format: `{"time":"${time_rfc3339}", "method":"${method}", "uri":"${uri}", "status":${status}}` + "\n",
+	e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
+		LogMethod:   true,
+		LogURI:      true,
+		LogStatus:   true,
+		HandleError: true,
+		LogValuesFunc: func(c *echo.Context, v middleware.RequestLoggerValues) error {
+			fmt.Printf("{\"time\":%q, \"method\":%q, \"uri\":%q, \"status\":%d}\n",
+				v.StartTime.Format(time.RFC3339), v.Method, v.URI, v.Status)
+			return nil
+		},
 	}))
 	e.Use(middleware.Recover())
 
-	e.GET("/", func(c echo.Context) error {
+	e.GET("/", func(c *echo.Context) error {
 		b.Logger().Infof("[/] ok request")
 		c.JSON(200, "ok")
 		return nil
 	})
-	e.GET("/healthz", func(c echo.Context) error {
+	e.GET("/healthz", func(c *echo.Context) error {
 		b.Logger().Infof("[Healthz] healthz request")
 		c.JSON(200, "ok")
 		return nil
 	})
-	e.GET("/oauth2", func(c echo.Context) error {
+	e.GET("/oauth2", func(c *echo.Context) error {
 		e.Logger.Info("received registration request")
 		notionToken, err := oauth.Handler(c)
 		if err != nil {
@@ -281,7 +289,7 @@ func (b *Bot) RunOauth2Endpoint() {
 
 	// keyAuth := middleware.KeyAuthWithConfig(middleware.KeyAuthConfig{
 	// 	KeyLookup: fmt.Sprintf("header:%s", metricsAuthHeader),
-	// 	Validator: func(key string, c echo.Context) (bool, error) {
+	// 	Validator: func(key string, c *echo.Context) (bool, error) {
 	// 		if key == os.Getenv(metricsAuthHeader) {
 	// 			return true, nil
 	// 		}
@@ -292,7 +300,7 @@ func (b *Bot) RunOauth2Endpoint() {
 	e.GET("/metrics", echo.WrapHandler(promhttp.Handler()))
 
 	address := fmt.Sprintf("0.0.0.0:%s", port)
-	e.Logger.Fatal(e.Start(address))
+	log.Fatal(e.Start(address))
 }
 
 func (b *Bot) GetHelpMessage() string {
