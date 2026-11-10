@@ -39,8 +39,9 @@ jobs:
       - name: Deploy
         # Uses the runner pod's in-cluster ServiceAccount (github-runner-notion-echo),
         # which is RBAC-bound to restart the notion-echo Deployment.
+        # 600s leaves room for a cold image pull after a node restart.
         run: |
           curl -sSLo /tmp/kubectl "https://dl.k8s.io/release/$(curl -sSL https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
           chmod +x /tmp/kubectl
           /tmp/kubectl -n notion-echo set image deployment/notion-echo notion-echo="$IMG:${{ github.sha }}"
-          /tmp/kubectl -n notion-echo rollout status deployment/notion-echo --timeout=180s
+          /tmp/kubectl -n notion-echo rollout status deployment/notion-echo --timeout=600s
